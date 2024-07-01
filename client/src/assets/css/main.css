@@ -1,7 +1,63 @@
-/* MAIN CSS */
+/* NewsDetail.css */
 
-/* wrapper */
 .page-wrapper {
-    padding: 8em 5em 10em 5em;
-  }
-  
+  padding: 10em 20em 6em 20em; 
+  width: 100%;
+  overflow: hidden;
+  font-size: 0.7em;
+
+}
+
+.filter-container {
+  /* position: fixed; */
+  /* top: 6em; */
+  display: flex;
+  gap: 1em;
+  margin: 2em 1em 1em 0;
+  font-size: 1.1em !important;
+}
+
+.scrollable-table-wrapper {
+  max-height: calc(45em - 1em);
+  overflow-y: auto;
+  border: 1px solid gray;
+}
+
+.result_table {
+  width: 100%; 
+  border-collapse: collapse;
+  table-layout: fixed; 
+}
+
+.result_table thead {
+  position: sticky;
+  top: -0.1em;
+  background-color: #d6d6d6;
+  z-index: 2;
+}
+
+.result_table th,
+.result_table td {
+  padding: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* border-bottom: 1px solid #ddd; */
+  width: 20%; 
+}
+.result_table td{
+  padding: 5px;
+}
+
+.result_table tr:hover {
+  background-color: aliceblue !important;
+  cursor: pointer;
+}
+
+.table-body {
+  width: 100vh !important;
+  /* max-height: calc(25em - 3.6em);  */
+}
+.table-body tr {
+  height: 0.1em !important;
+}

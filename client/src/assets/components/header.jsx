@@ -11,7 +11,7 @@ const Header = () => {
         <ul className="d-flex nav-list">
           <li>
             <Link to="/" className="navlink">
-              Home
+              Catalog control
             </Link>
           </li>
           {/* <li>
