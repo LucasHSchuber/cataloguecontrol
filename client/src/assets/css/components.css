@@ -7,7 +7,7 @@
     position: fixed;
     top: 0;
     left: 0;
-    padding: 1.5em 3em 1em 3em;
+    padding: 1em 3em 0.2em 3em;
     background-color: rgb(219, 219, 219);
     width: 100%;
   }
@@ -21,6 +21,7 @@
     padding-right: 5em;
     list-style-type: none;
     font-weight: 600;
+    font-size: 0.9em;
     transition: 0.2s;
   }
   

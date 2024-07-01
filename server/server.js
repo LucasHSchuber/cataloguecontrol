@@ -21,7 +21,7 @@ const pool = mysql.createPool({
 });
 
 // API endpoint to fetch data by orderuuid from MySQL
-app.get('/api/data', (req, res) => {
+app.get('/api/net_orders', (req, res) => {
 
   const query = 'SELECT * FROM net_orders';
   pool.query(query, (err, results) => {
@@ -33,6 +33,7 @@ app.get('/api/data', (req, res) => {
     }
   });
 });
+
 
 // API endpoint to fetch data by orderuuid from MySQL
 app.get('/api/data/uuid', (req, res) => {
@@ -47,6 +48,62 @@ app.get('/api/data/uuid', (req, res) => {
     if (err) {
       console.error('Error fetching data:', err);
       res.status(500).send('Error fetching data');
+    } else {
+      res.json(results);
+    }
+  });
+});
+
+// API endpoint to fetch neo_activities from MySQL
+app.get('/api/neo_activities', (req, res) => {
+
+  const query = 'SELECT * FROM neo_activities';
+  pool.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching neo_activities:', err);
+      res.status(500).send('Error fetching neo_activities');
+    } else {
+      res.json(results);
+    }
+  });
+});
+
+// API endpoint to fetch neo_projects from MySQL
+app.get('/api/neo_projects', (req, res) => {
+
+  const query = 'SELECT * FROM neo_projects';
+  pool.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching neo_projects:', err);
+      res.status(500).send('Error fetching neo_projects');
+    } else {
+      res.json(results);
+    }
+  });
+});
+
+// API endpoint to fetch net_catalogue_orders from MySQL
+app.get('/api/net_catalogue_orders', (req, res) => {
+
+  const query = 'SELECT * FROM net_catalogue_orders';
+  pool.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching net_catalogue_orders:', err);
+      res.status(500).send('Error fetching net_catalogue_orders');
+    } else {
+      res.json(results);
+    }
+  });
+});
+
+// API endpoint to fetch net_catalogue_projects from MySQL
+app.get('/api/net_catalogue_projects', (req, res) => {
+
+  const query = 'SELECT * FROM net_catalogue_projects';
+  pool.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching net_catalogue_projects:', err);
+      res.status(500).send('Error fetching net_catalogue_projects');
     } else {
       res.json(results);
     }
