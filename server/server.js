@@ -126,8 +126,9 @@ app.get('/api/neo_catalog_data', (req, res) => {
 
 // fetch relevant project data for catalog control
 app.get('/api/projects', (req, res) => {
+  const { year, country, status } = req.query;
 
-  const query = `
+  let query = `
     SELECT p1.uuid, p1.portaluuid, p1.status, p1.D2, p2.name, d.production_type, p1.last_updated, 
       IF(p1.D2 IS NOT NULL, SUM(IF(o.status = 1, 1, 0)), p1.num_orders) AS new_orders, 
       p1.num_orders 
@@ -135,20 +136,33 @@ app.get('/api/projects', (req, res) => {
     JOIN neo_projects AS p2 ON p1.uuid = p2.uuid 
     LEFT JOIN net_catalogue_orders AS o ON p1.uuid = o.project_id 
     LEFT JOIN neo_catalog_data AS d ON d.project_uuid = p1.uuid 
-    GROUP BY p1.uuid
-    ORDER BY p1.last_updated DESC
-    LIMIT 100`;
+    WHERE 1=1
+  `;
 
+  if (year) {
+    query += ` AND p2.name LIKE '%${pool.escape(year).replace(/'/g, '')}%'`;
+  }
 
-    pool.query(query, (err, results) => {
-      if (err) {
-        console.error('Error fetching neo_catalog_data:', err);
-        res.status(500).send('Error fetching neo_catalog_data');
-      } else {
-        res.json(results);
-      }
-    });
+  if (country) {
+    query += ` AND p2.portaluuid = ${pool.escape(country)}`;
+  }
+
+  if (status) {
+    query += ` AND p1.status = ${pool.escape(status)}`;
+  }
+
+  query += ` GROUP BY p1.uuid ORDER BY p1.last_updated DESC LIMIT 2000`;
+
+  pool.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching neo_catalog_data:', err);
+      res.status(500).send('Error fetching neo_catalog_data');
+    } else {
+      res.json(results);
+    }
+  });
 });
+
 
 
 // Start server

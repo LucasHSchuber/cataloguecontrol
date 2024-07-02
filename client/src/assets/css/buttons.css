@@ -1,0 +1,47 @@
+/* BUTTONS */
+
+.button{
+    border: 1px solid rgb(187, 187, 187);
+    padding: 0.8em 1.5em;
+    background-color: rgb(242, 242, 242);
+    transition: 0.2s;
+    cursor: pointer;
+    border-radius: 3px;
+    font-weight: 600;
+}
+.button:hover{
+    background-color: rgb(228, 228, 228);
+}
+
+.table-button{
+    border: 1px solid rgb(217, 217, 217);
+    padding: 0.3em 1em;
+    background-color: rgb(242, 242, 242);
+    transition: 0.1s;
+    cursor: pointer;
+    border-radius: 3px;
+}
+.table-button:hover{
+    background-color: rgb(195, 195, 195);
+}
+
+.runD2:hover{
+    background-color: #ECFFE8;
+    border: 1px solid #70ff4d;
+}
+.standard{
+
+}
+
+.clearall-button{
+    padding: 0.6em 1.2em;
+    border-radius: 4px;
+    background-color: rgb(40, 40, 40);
+    color: white;
+    border:none;
+    transition: 0.2s;
+}
+.clearall-button:hover{
+    background-color: black;
+    cursor: pointer;
+}

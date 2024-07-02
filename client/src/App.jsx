@@ -4,7 +4,7 @@ import Index from './pages/index';
 // import "./App.css";
 
 import './assets/css/main.css';
-
+import './assets/css/buttons.css';
 
 function App() {
   return (
@@ -12,9 +12,7 @@ function App() {
       <div className="content">
         <div className="route-layout">
           <Routes>
-            
             <Route path="/" element={<Index />} />
-            
           </Routes>
         </div>
       </div>

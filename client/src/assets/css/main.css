@@ -1,11 +1,11 @@
 /* NewsDetail.css */
 
 .page-wrapper {
-  padding: 10em 20em 6em 20em; 
+  padding: 8em 20em 20em 20em; 
   width: 100%;
   overflow: hidden;
   font-size: 0.7em;
-
+  font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
 }
 
 .filter-container {
@@ -18,13 +18,15 @@
 }
 
 .scrollable-table-wrapper {
-  max-height: calc(45em - 1em);
+  /* width: 80% !important; width of table */
+  max-height: calc(35em - 1em);
   overflow-y: auto;
   border: 1px solid gray;
+  border-radius: 5px;
 }
 
 .result_table {
-  width: 100%; 
+  /* width: 100%;  */
   border-collapse: collapse;
   table-layout: fixed; 
 }
@@ -32,7 +34,7 @@
 .result_table thead {
   position: sticky;
   top: -0.1em;
-  background-color: #d6d6d6;
+  background-color: #eeeeee;
   z-index: 2;
 }
 
@@ -60,4 +62,52 @@
 }
 .table-body tr {
   height: 0.1em !important;
+}
+
+/* filter */
+
+.select-box{
+  border: 1px solid black;
+  padding: 0.3em 0.5em;
+}
+
+/* selected data bodx/table */
+
+.selected-data-box{
+  position: fixed;
+  bottom: 0;
+  z-index: 5;
+  background-color: rgb(248, 248, 248);
+  padding: 3em 10em 10em 10em; 
+  width: 100%;
+  border-radius: 5px;
+  font-size: 0.75em;
+  box-shadow: 1px 1px 6px 1px rgba(16, 16, 16, 0.2);
+  max-height: 18em;
+  overflow: scroll;
+}
+
+.selected-data-table{
+  padding: 10em 20em 6em 20em; 
+  width: 100% !important;
+}
+
+.selected-data-table th,
+.selected-data-table td {
+  padding: 2px 12px;
+}
+
+
+/* alert meassage */
+.alert-message{
+  z-index: 20;
+  padding: 0.75em 1.8em;
+  font-size: 0.75em;
+  font-weight: 600;
+  background-color: rgb(39, 39, 39, 0.9);
+  border-radius: 5px;
+  color: white;
+  position: fixed;
+  bottom: 20em;
+  left: 1em;
 }
