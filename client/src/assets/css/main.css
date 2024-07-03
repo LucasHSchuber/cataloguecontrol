@@ -23,23 +23,28 @@
   overflow-y: auto;
   border: 1px solid gray;
   border-radius: 5px;
+  box-shadow: inset 0px -7px 20px -10px rgba(165, 165, 165, 0.5); /* Adjust values as needed */
+
 }
 
-.result_table {
+.result-table {
   /* width: 100%;  */
   border-collapse: collapse;
   table-layout: fixed; 
 }
 
-.result_table thead {
+.result-table thead {
   position: sticky;
   top: -0.1em;
   background-color: #eeeeee;
   z-index: 2;
 }
+.result-table thead tr th {
+  cursor: pointer;
+}
 
-.result_table th,
-.result_table td {
+.result-table th,
+.result-table td {
   padding: 10px;
   white-space: nowrap;
   overflow: hidden;
@@ -47,11 +52,11 @@
   /* border-bottom: 1px solid #ddd; */
   width: 20%; 
 }
-.result_table td{
+.result-table td{
   padding: 5px;
 }
 
-.result_table tr:hover {
+.result-table tbody tr:hover {
   background-color: aliceblue !important;
   cursor: pointer;
 }
@@ -69,7 +74,17 @@
 .select-box{
   border: 1px solid black;
   padding: 0.3em 0.5em;
+  outline: none;
 }
+
+.seach-bar{
+  padding: 0.3em 0.75em;
+  width: 20em;
+  border-radius: 12px;
+  border: 1px solid black;
+  outline: none;
+}
+
 
 /* selected data bodx/table */
 
@@ -78,7 +93,7 @@
   bottom: 0;
   z-index: 5;
   background-color: rgb(248, 248, 248);
-  padding: 3em 10em 10em 10em; 
+  padding: 3em 10em 4em 10em; 
   width: 100%;
   border-radius: 5px;
   font-size: 0.75em;
@@ -94,7 +109,12 @@
 
 .selected-data-table th,
 .selected-data-table td {
-  padding: 2px 12px;
+  padding: 1px 12px;
+}
+
+.selected-data-table tbody tr:hover {
+  background-color: #ECFFE8 !important;
+  cursor: pointer;
 }
 
 

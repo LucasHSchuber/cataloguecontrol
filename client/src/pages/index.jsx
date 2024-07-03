@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
 import { library } from '@fortawesome/fontawesome-svg-core';
-import { faTimes, faDownload } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faDownload, faSort } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import baseURL from '../../../config/env.js';
@@ -18,17 +18,19 @@ const Index = () => {
   const [year, setYear] = useState('');
   const [country, setCountry] = useState('');
   const [status, setStatus] = useState('');
+  const [searchString, setSearchString] = useState('');
+
+  const [sortColumn, setSortColumn] = useState('last_updated'); // Initial sort column
+  const [sortDirection, setSortDirection] = useState('desc'); // Initial sort direction
 
   const [showAddedRowMessage, setShowAddedRowMessage] = useState(false);
   const [showRemovedRowMessage, setShowRemovedRowMessage] = useState(false);
-
-
 
   const fetchProjects = async () => {
     setLoading(true);
     try {
       const response = await axios.get(`${baseURL}/api/projects`, {
-        params: { year, country, status },
+        params: { year, country, status, searchString },
       });
       console.log('Fetched projects:', response.data);
       setProjects(response.data);
@@ -50,7 +52,41 @@ const Index = () => {
 
   useEffect(() => {
     fetchProjects();
-  }, [year, country, status]);
+  }, [year, country, status, searchString]);
+
+
+  const handleSort = (column) => {
+  if (column === sortColumn) {
+    setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+  } else {
+    setSortColumn(column);
+    setSortDirection('desc');
+  }
+
+  const sortedProjects = [...projects].sort((a, b) => {
+    if (column === 'production_type') {
+      // Handle sorting for 'CWS type' column specifically
+      if (sortDirection === 'asc') {
+        if (a[column] === 'internal' && b[column] !== 'internal') return -1;
+        if (a[column] !== 'internal' && b[column] === 'internal') return 1;
+        return a[column] > b[column] ? 1 : -1;
+      } else {
+        if (a[column] === 'internal' && b[column] !== 'internal') return 1;
+        if (a[column] !== 'internal' && b[column] === 'internal') return -1;
+        return a[column] < b[column] ? 1 : -1;
+      }
+    } else {
+      // Default sorting for other columns
+      if (sortDirection === 'asc') {
+        return a[column] > b[column] ? 1 : -1;
+      } else {
+        return a[column] < b[column] ? 1 : -1;
+      }
+    }
+  });
+
+  setProjects(sortedProjects);
+};
 
 
   const formatDateTime = (dateTimeString) => {
@@ -94,7 +130,7 @@ const Index = () => {
         return [...prevSelectedData, { index, data }];
       }
     });
-    console.log(selectedData)
+    console.log(selectedData);
   };
 
   const ClearAllSelected = () => {
@@ -107,33 +143,37 @@ const Index = () => {
   };
 
   const removeSelectedData = (indexToRemove) => {
-    console.log("Index to remove:", indexToRemove);
+    console.log('Index to remove:', indexToRemove);
 
     setShowRemovedRowMessage(true);
-        setTimeout(() => {
-          setShowRemovedRowMessage(false);
-        }, 500);
+    setTimeout(() => {
+      setShowRemovedRowMessage(false);
+    }, 500);
 
-    setSelectedData(prevSelectedData =>
-      prevSelectedData.filter(item => item.index !== indexToRemove)
+    setSelectedData((prevSelectedData) =>
+      prevSelectedData.filter((item) => item.index !== indexToRemove)
     );
-    setSelectedIndices(prevSelectedIndices =>
-      prevSelectedIndices.filter(index => index !== indexToRemove)
+    setSelectedIndices((prevSelectedIndices) =>
+      prevSelectedIndices.filter((index) => index !== indexToRemove)
     );
-  }
-
+  };
 
   const filterYear = (newValue) => {
     setYear(newValue);
-    setSelectedIndices([])
+    setSelectedIndices([]);
   };
   const filterCountry = (newValue) => {
     setCountry(newValue);
-    setSelectedIndices([])
+    setSelectedIndices([]);
   };
   const filterStatus = (newValue) => {
     setStatus(newValue);
-    setSelectedIndices([])
+    setSelectedIndices([]);
+  };
+  const handleSearchString = (search) => {
+    setSearchString(search);
+    console.log(search)
+    setSelectedIndices([]);
   };
 
   return (
@@ -172,11 +212,21 @@ const Index = () => {
               onChange={(e) => filterCountry(e.target.value)}
             >
               <option value="">All</option>
-              <option value="2dba368b-6205-11e1-b101-0025901d40ea">Sweden</option>
-              <option value="da399c45-3cf2-11ea-b287-ac1f6b419120">Norway</option>
-              <option value="8d944c93-9de4-11e2-882a-0025901d40ea">Denmark</option>
-              <option value="1cfa0ec6-d7de-11e1-b101-0025901d40ea">Finland</option>
-              <option value="da399c45-3cf2-11ea-b287-ac1f6b419120">Germany</option>
+              <option value="2dba368b-6205-11e1-b101-0025901d40ea">
+                Sweden
+              </option>
+              <option value="da399c45-3cf2-11ea-b287-ac1f6b419120">
+                Norway
+              </option>
+              <option value="8d944c93-9de4-11e2-882a-0025901d40ea">
+                Denmark
+              </option>
+              <option value="1cfa0ec6-d7de-11e1-b101-0025901d40ea">
+                Finland
+              </option>
+              <option value="da399c45-3cf2-11ea-b287-ac1f6b419120">
+                Germany
+              </option>
             </select>
           </label>
           <label>
@@ -193,18 +243,29 @@ const Index = () => {
               <option value="">CWS ready</option>
             </select>
           </label>
+          <div>
+            <label>
+              Search:
+            <input 
+              placeholder='Search for project...'
+              className="ml-2 seach-bar"
+              onChange={(e) => handleSearchString(e.target.value) }
+              >
+              </input>
+            </label>
+          </div>
         </div>
 
         <div className="scrollable-table-wrapper">
-          <table className="result_table">
+          <table className="result-table">
             <thead>
               <tr>
-                <th>Project</th>
-                <th>D2</th>
-                <th>Orders</th>
-                <th>New orders</th>
-                <th>CWS type</th>
-                <th>Last updated</th>
+                <th onClick={() => handleSort('name')}>Project  <FontAwesomeIcon icon={faSort} /></th>
+                <th onClick={() => handleSort('D2')}>D2  <FontAwesomeIcon icon={faSort} /></th>
+                <th onClick={() => handleSort('num_orders')}>Orders  <FontAwesomeIcon icon={faSort} /></th>
+                <th onClick={() => handleSort('new_orders')}>New orders  <FontAwesomeIcon icon={faSort} /></th>
+                <th onClick={() => handleSort('production_type')}>CWS type  <FontAwesomeIcon icon={faSort} /></th>
+                <th onClick={() => handleSort('last_updated')}>Last updated  <FontAwesomeIcon icon={faSort} /></th>
               </tr>
             </thead>
             {loading ? (
@@ -291,45 +352,77 @@ const Index = () => {
       </div>
       {/* selected data table */}
       {selectedData.length > 0 && (
-      <div className="mt-3 selected-data-box">
-        <table className="selected-data-table">
-          <thead>
-            <tr>
-              <th></th>
-              <th>Project ({selectedData.length})</th>
-              <th>D2</th>
-              <th>Orders</th>
-              <th>New orders</th>
-              <th></th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody className="selected-data-table-body">
-            {selectedData.map((data) => (
-              <tr key={data.data.uuid}>
-                <td><FontAwesomeIcon icon={faTimes}  onClick={() => removeSelectedData(data.index)} title='Remove project'/></td>
-                <td data-uuid={data.data.uuid}>{data.data.name}</td>
-                <td>{data.data.D2 !== null ? formatDateTime(data.data.D2) : '---'}</td>
-                <td>{data.data.num_orders}</td>
-                <td>
-                  {data.data.D2 ? data.data.new_orders : data.data.num_orders}
-                </td>
-                <td><button className='mr-2 table-button'>Open in EBSS</button></td>
-                <td><button className='mr-2 table-button'>Send to CWS</button></td>
+        <div className="mt-3 selected-data-box">
+          <table className="selected-data-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Project ({selectedData.length})</th>
+                <th>D2</th>
+                <th>Orders</th>
+                <th>New orders</th>
+                <th></th>
+                <th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className='mt-3' >
-          <hr></hr>
-          <button className='mr-2 button runD2'>Run D2</button>
-          <button className='button'>  <FontAwesomeIcon icon={faDownload} title='Download' /></button>
+            </thead>
+            <tbody className="selected-data-table-body">
+              {selectedData.map((data) => (
+                <tr key={data.data.uuid}>
+                  <td>
+                    <FontAwesomeIcon
+                      className='remove-selected-data-button'
+                      icon={faTimes}
+                      onClick={() => removeSelectedData(data.index)}
+                      title="Remove project"
+                    />
+                  </td>
+                  <td data-uuid={data.data.uuid}>{data.data.name}</td>
+                  <td>
+                    {data.data.D2 !== null
+                      ? formatDateTime(data.data.D2)
+                      : '---'}
+                  </td>
+                  <td>{data.data.num_orders}</td>
+                  <td>
+                    {data.data.D2 ? data.data.new_orders : data.data.num_orders}
+                  </td>
+                  <td>
+                    <button className="mr-2 table-button">Open in EBSS</button>
+                  </td>
+                  <td>
+                    <button className="mr-2 table-button">Send to CWS</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="mt-3">
+            <hr></hr>
+            <button className="mr-2 button runD2">Run D2</button>
+            <button className="button">
+              {' '}
+              <FontAwesomeIcon icon={faDownload} title="Download" />
+            </button>
+          </div>
         </div>
-      </div>
       )}
 
-    {showAddedRowMessage && <div className="alert-message" style={{ backgroundColor: "green"}}>Project added</div>}
-    {showRemovedRowMessage && <div className="alert-message" style={{ backgroundColor: "red"}}>Project removed</div>}
+      {showAddedRowMessage && (
+        <div
+          className="alert-message"
+          style={{ backgroundColor: '#C8FFAB', color: 'black', border: "0.5px solid green" }}
+        >
+          Project added
+        </div>
+      )}
+      {showRemovedRowMessage && (
+        <div
+          className="alert-message"
+          style={{ backgroundColor: '#FFBCAB', color: 'black', border: "0.5px solid red" }}
+        >
+          Project removed
+        </div>
+      )}
     </div>
   );
 };

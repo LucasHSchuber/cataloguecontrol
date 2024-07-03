@@ -15,14 +15,14 @@
 
 .table-button{
     border: 1px solid rgb(217, 217, 217);
-    padding: 0.3em 1em;
+    padding: 0.2em 1em;
     background-color: rgb(242, 242, 242);
     transition: 0.1s;
     cursor: pointer;
     border-radius: 3px;
 }
 .table-button:hover{
-    background-color: rgb(195, 195, 195);
+    background-color: rgb(228, 228, 228);
 }
 
 .runD2:hover{
@@ -31,6 +31,17 @@
 }
 .standard{
 
+}
+
+.remove-selected-data-button{
+    background-color: rgb(242, 242, 242);
+    padding: 0.4em;
+    transition: 0.2s;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.remove-selected-data-button:hover{
+    background-color: rgb(228, 228, 228);
 }
 
 .clearall-button{

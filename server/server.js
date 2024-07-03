@@ -126,7 +126,7 @@ app.get('/api/neo_catalog_data', (req, res) => {
 
 // fetch relevant project data for catalog control
 app.get('/api/projects', (req, res) => {
-  const { year, country, status } = req.query;
+  const { year, country, status, searchString } = req.query;
 
   let query = `
     SELECT p1.uuid, p1.portaluuid, p1.status, p1.D2, p2.name, d.production_type, p1.last_updated, 
@@ -151,12 +151,16 @@ app.get('/api/projects', (req, res) => {
     query += ` AND p1.status = ${pool.escape(status)}`;
   }
 
+  if (searchString) {
+    query += ` AND p2.name LIKE '%${pool.escape(searchString).replace(/'/g, '')}%'`;
+  }
+
   query += ` GROUP BY p1.uuid ORDER BY p1.last_updated DESC LIMIT 2000`;
 
   pool.query(query, (err, results) => {
     if (err) {
-      console.error('Error fetching neo_catalog_data:', err);
-      res.status(500).send('Error fetching neo_catalog_data');
+      console.error('Error fetching /api/projects:', err);
+      res.status(500).send('Error fetching /api/projects');
     } else {
       res.json(results);
     }
