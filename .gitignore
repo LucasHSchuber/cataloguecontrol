@@ -12,8 +12,9 @@ dist
 dist-ssr
 *.local
 server/*
-server/DbConfig.js
 config/env.js
+server/DbConfig.js
+
 
 # Editor directories and files
 .vscode/*

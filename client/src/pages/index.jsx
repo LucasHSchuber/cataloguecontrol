@@ -68,6 +68,38 @@ const Index = () => {
     fetchProjects();
   }, [year, country, status, searchString, isUnorderedList]);
 
+
+  const fetchNeoProjectsForOrders = async (responseArray) => {
+    try {
+      // Prepare array of orderuuids
+      const JobUuidArray = responseArray.map(item => item.job_uuid);
+      console.log(JobUuidArray);
+      // Fetch neo_projects data for all orderuuids
+      const response = await axios.get(`${baseURL}/api/data/uuid`, {
+        params: {
+          jobuuid: JobUuidArray.join(',') // Pass orderuuids as comma-separated string
+        }
+      });
+  
+      console.log('Fetched neo_projects:', response.data);
+  
+      responseArray.forEach(item => {
+        const matchingProject = response.data.find(project => project.uuid === item.job_uuid);
+        if (matchingProject) {
+          console.log("MATCHED!!!")
+          item.projectname = matchingProject.name; // Add projectName or update as needed
+        } else {
+          console.log(`No match found for orderuuid: ${item.jobuuid}`);
+        }
+      });
+  
+      console.log('Updated responseArray:', responseArray);
+    } catch (error) {
+      console.error('Error fetching neo_projects:', error);
+    }
+  };
+  
+
   const handleSort = (column) => {
     if (column === sortColumn) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -267,6 +299,7 @@ const Index = () => {
           const responseArray = response.data
           .filter(d => d.data_2 === "1")
           .map(item => ({
+            job_uuid: job_uuid,
             data_2: item.data_2,
             orderuuid: item.uuid,
             subjectuuid: item.uuid,
@@ -282,8 +315,8 @@ const Index = () => {
             username: item.name,
           }));
           console.log(responseArray);
-          return responseArray;
-
+          fetchNeoProjectsForOrders(responseArray);
+          // return responseArray;
         } catch (error) {
           console.log("Error fetching data from Netlife: ", error);
         }

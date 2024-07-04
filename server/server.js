@@ -23,18 +23,18 @@ const pool = mysql.createPool(dbConfig);
 // });
 
 // API endpoint to fetch data by orderuuid from MySQL
-app.get('/api/net_orders', (req, res) => {
+// app.get('/api/net_orders', (req, res) => {
 
-  const query = 'SELECT * FROM net_orders';
-  pool.query(query, (err, results) => {
-    if (err) {
-      console.error('Error fetching data:', err);
-      res.status(500).send('Error fetching data');
-    } else {
-      res.json(results);
-    }
-  });
-});
+//   const query = 'SELECT * FROM net_orders';
+//   pool.query(query, (err, results) => {
+//     if (err) {
+//       console.error('Error fetching data:', err);
+//       res.status(500).send('Error fetching data');
+//     } else {
+//       res.json(results);
+//     }
+//   });
+// });
 
 
 // // API endpoint to fetch data by orderuuid from MySQL
@@ -70,19 +70,41 @@ app.get('/api/net_orders', (req, res) => {
 //   });
 // });
 
-// API endpoint to fetch neo_projects from MySQL
-app.get('/api/neo_projects', (req, res) => {
+// API endpoint to fetch data by orderuuid from MySQL
+app.get('/api/data/uuid', (req, res) => {
+  const { jobuuid } = req.query;
+  console.log(jobuuid);
 
-  const query = 'SELECT * FROM neo_projects';
+  if (!jobuuid) {
+    return res.status(400).json({ error: 'jobuuid parameter is required' });
+  }
+
+  const query = 'SELECT uuid, name FROM neo_projects';
   pool.query(query, (err, results) => {
     if (err) {
-      console.error('Error fetching neo_projects:', err);
-      res.status(500).send('Error fetching neo_projects');
+      console.error('Error fetching data from neo_projects:', err);
+      return res.status(500).send('Error fetching data from neo_projects');
     } else {
       res.json(results);
     }
+
+    // // Assuming results is an array of objects like [{ uuid: 'uuid1', name: 'name1' }, ...]
+    // const projectsMap = results.reduce((acc, project) => {
+    //   acc[project.uuid] = project.name;
+    //   return acc;
+    // }, {});
+
+    // // Assuming responseArray is an array of objects like [{ orderuuid: 'uuid1' }, { orderuuid: 'uuid2' }, ...]
+    // responseArray.forEach(obj => {
+    //   if (projectsMap[obj.orderuuid]) {
+    //     obj.project_name = projectsMap[obj.orderuuid];
+    //   }
+    // });
+
+    // res.json(responseArray);
   });
 });
+;
 
 // API endpoint to fetch net_catalogue_orders from MySQL
 app.get('/api/net_catalogue_orders', (req, res) => {
