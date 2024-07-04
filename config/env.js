@@ -7,6 +7,6 @@ const baseURL = process.env.NODE_ENV === 'production'
 
   const apiUsername = "lucas.hammarstrand@hotmail.com";
   const apiPassword = "Express4040";
-  const serverPassword = "1pJiZWW6GPo";
+  // const serverPassword = "1pJiZWW6GPo";
   
   export { baseURL, apiUsername, apiPassword };

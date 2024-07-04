@@ -2,6 +2,7 @@ const express = require('express');
 const mysql = require('mysql');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const dbConfig = require('./DbConfig.js'); 
 
 const app = express();
 const port = 3001;
@@ -11,14 +12,15 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // MySQL Connection Pool
-const pool = mysql.createPool({
-  connectionLimit: 10, // Adjust as per your requirement
-  host: 'mysql512.loopia.se',
-  user: 'expbil01@e361369',
-  password: 'm!1pJiZWW6GPo&',
-  database: 'expressbild_org_db_14',
-  port: '3306'
-});
+const pool = mysql.createPool(dbConfig);
+// const pool = mysql.createPool({
+//   connectionLimit: 10, // Adjust as per your requirement
+//   host: 'mysql512.loopia.se',
+//   user: 'expbil01@e361369',
+//   password: 'm!1pJiZWW6GPo&',
+//   database: 'expressbild_org_db_14',
+//   port: '3306'
+// });
 
 // API endpoint to fetch data by orderuuid from MySQL
 app.get('/api/net_orders', (req, res) => {
