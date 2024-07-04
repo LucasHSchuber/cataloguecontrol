@@ -22,64 +22,17 @@ const pool = mysql.createPool(dbConfig);
 //   port: '3306'
 // });
 
-// API endpoint to fetch data by orderuuid from MySQL
-// app.get('/api/net_orders', (req, res) => {
-
-//   const query = 'SELECT * FROM net_orders';
-//   pool.query(query, (err, results) => {
-//     if (err) {
-//       console.error('Error fetching data:', err);
-//       res.status(500).send('Error fetching data');
-//     } else {
-//       res.json(results);
-//     }
-//   });
-// });
-
-
-// // API endpoint to fetch data by orderuuid from MySQL
-// app.get('/api/data/uuid', (req, res) => {
-//   const { orderuuid } = req.query;
-
-//   if (!orderuuid) {
-//     return res.status(400).json({ error: 'orderuuid parameter is required' });
-//   }
-
-//   const query = 'SELECT * FROM net_orders WHERE orderuuid = ?';
-//   pool.query(query, [orderuuid], (err, results) => {
-//     if (err) {
-//       console.error('Error fetching data:', err);
-//       res.status(500).send('Error fetching data');
-//     } else {
-//       res.json(results);
-//     }
-//   });
-// });
-
-// // API endpoint to fetch neo_activities from MySQL
-// app.get('/api/neo_activities', (req, res) => {
-
-//   const query = 'SELECT * FROM neo_activities';
-//   pool.query(query, (err, results) => {
-//     if (err) {
-//       console.error('Error fetching neo_activities:', err);
-//       res.status(500).send('Error fetching neo_activities');
-//     } else {
-//       res.json(results);
-//     }
-//   });
-// });
 
 // API endpoint to fetch data by orderuuid from MySQL
-app.get('/api/data/uuid', (req, res) => {
+app.get('/api/data/neo_projects', (req, res) => {
   const { jobuuid } = req.query;
   console.log(jobuuid);
 
-  if (!jobuuid) {
-    return res.status(400).json({ error: 'jobuuid parameter is required' });
-  }
+  // if (!jobuuid) {
+  //   return res.status(400).json({ error: 'jobuuid parameter is required' });
+  // }
 
-  const query = 'SELECT uuid, name FROM neo_projects';
+  const query = 'SELECT uuid, name, catalogues FROM neo_projects';
   pool.query(query, (err, results) => {
     if (err) {
       console.error('Error fetching data from neo_projects:', err);
@@ -88,37 +41,24 @@ app.get('/api/data/uuid', (req, res) => {
       res.json(results);
     }
 
-    // // Assuming results is an array of objects like [{ uuid: 'uuid1', name: 'name1' }, ...]
-    // const projectsMap = results.reduce((acc, project) => {
-    //   acc[project.uuid] = project.name;
-    //   return acc;
-    // }, {});
-
-    // // Assuming responseArray is an array of objects like [{ orderuuid: 'uuid1' }, { orderuuid: 'uuid2' }, ...]
-    // responseArray.forEach(obj => {
-    //   if (projectsMap[obj.orderuuid]) {
-    //     obj.project_name = projectsMap[obj.orderuuid];
-    //   }
-    // });
-
-    // res.json(responseArray);
   });
 });
-;
 
-// API endpoint to fetch net_catalogue_orders from MySQL
-app.get('/api/net_catalogue_orders', (req, res) => {
 
-  const query = 'SELECT * FROM net_catalogue_orders';
+// API endpoint to fetch net_catalogue_projects from MySQL
+app.get('/api/data/net_catalogue_projects', (req, res) => {
+  const query = 'SELECT portaluuid, uuid FROM net_catalogue_projects';
   pool.query(query, (err, results) => {
     if (err) {
-      console.error('Error fetching net_catalogue_orders:', err);
-      res.status(500).send('Error fetching net_catalogue_orders');
+      console.error('Error fetching net_catalogue_projects:', err);
+      res.status(500).send('Error fetching net_catalogue_projects');
     } else {
-      res.json(results);
+      res.json(results); // Correct the response format
     }
   });
 });
+
+
 
 // API endpoint to insert records into net_catalogue_orders
 app.post('/api/net_catalogue_orders', (req, res) => {
@@ -152,34 +92,6 @@ app.post('/api/net_catalogue_orders', (req, res) => {
   });
 });
 
-
-// // API endpoint to fetch net_catalogue_projects from MySQL
-// app.get('/api/net_catalogue_projects', (req, res) => {
-
-//   const query = 'SELECT * FROM net_catalogue_projects';
-//   pool.query(query, (err, results) => {
-//     if (err) {
-//       console.error('Error fetching net_catalogue_projects:', err);
-//       res.status(500).send('Error fetching net_catalogue_projects');
-//     } else {
-//       res.json(results);
-//     }
-//   });
-// });
-
-// // API endpoint to fetch net_catalogue_projects from MySQL
-// app.get('/api/neo_catalog_data', (req, res) => {
-
-//   const query = 'SELECT * FROM neo_catalog_data';
-//   pool.query(query, (err, results) => {
-//     if (err) {
-//       console.error('Error fetching neo_catalog_data:', err);
-//       res.status(500).send('Error fetching neo_catalog_data');
-//     } else {
-//       res.json(results);
-//     }
-//   });
-// });
 
 // fetch relevant project data for catalog control
 app.get('/api/projects', (req, res) => {

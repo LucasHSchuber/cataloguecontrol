@@ -71,33 +71,73 @@ const Index = () => {
 
   const fetchNeoProjectsForOrders = async (responseArray) => {
     try {
-      // Prepare array of orderuuids
-      const JobUuidArray = responseArray.map(item => item.job_uuid);
-      console.log(JobUuidArray);
-      // Fetch neo_projects data for all orderuuids
-      const response = await axios.get(`${baseURL}/api/data/uuid`, {
-        params: {
-          jobuuid: JobUuidArray.join(',') // Pass orderuuids as comma-separated string
-        }
-      });
-  
+      const response = await axios.get(`${baseURL}/api/data/neo_projects`
+    );
       console.log('Fetched neo_projects:', response.data);
-  
       responseArray.forEach(item => {
         const matchingProject = response.data.find(project => project.uuid === item.job_uuid);
         if (matchingProject) {
-          console.log("MATCHED!!!")
-          item.projectname = matchingProject.name; // Add projectName or update as needed
+          // console.log("MATCHED!!!")
+          item.projectname = matchingProject.name; // Add projectName 
+          // Parse catalogues JSON string
+          try {
+            const catalogues = JSON.parse(matchingProject.catalogues);
+            item.catalogues = catalogues.map(catalogue => ({
+              name: catalogue.name,
+              price: catalogue.price,
+              vatvalue: catalogue.price - (catalogue.price * 0.9434)
+            }));
+          } catch (error) {
+            console.error('Error parsing catalogues JSON:', error);
+          }
+         
         } else {
           console.log(`No match found for orderuuid: ${item.jobuuid}`);
         }
+       
       });
-  
+      fetchCatalogProjects(responseArray);
       console.log('Updated responseArray:', responseArray);
     } catch (error) {
       console.error('Error fetching neo_projects:', error);
     }
+   
   };
+
+
+  const fetchCatalogProjects = async (responseArray) => {
+    try {
+      // Fetch net_catalogue_projects data
+      const response = await axios.get(`${baseURL}/api/data/net_catalogue_projects`);
+    
+      console.log('Fetched net_catalogue_projects:', response.data);
+  
+      // Update responseArray with portaluuid and uuid based on matching orderuuid
+      responseArray.forEach(item => {
+        const matchingProject = response.data.find(project => project.uuid === item.job_uuid);
+        if (matchingProject) {
+          // console.log("MATCHED!!!");
+          item.portaluuid = matchingProject.portaluuid;
+          item.project_id = matchingProject.uuid;
+        } else {
+          console.log(`No match found for orderuuid: ${item.orderuuid}`);
+        }
+      });
+      
+      saveJoinedArray(responseArray);
+      console.log('Updated responseArray:', responseArray);
+    } catch (error) {
+      console.error('Error fetching net_catalogue_projects:', error);
+    }
+  };
+
+  const saveJoinedArray = (responseArray) => {
+    if (responseArray[0].project_id && responseArray[0].catalogues){
+      console.log("FINAL RESPONSE ARRAY", responseArray);
+    } else {
+      console.log("ERROR JOINING AND WILL NOT PROCEED TO ADD TUPPLE TO NET_CATALOGUES_ORDER");
+    }
+  }
   
 
   const handleSort = (column) => {
