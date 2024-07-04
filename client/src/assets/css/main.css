@@ -1,7 +1,7 @@
 /* NewsDetail.css */
 
 .page-wrapper {
-  padding: 8em 20em 20em 20em; 
+  padding: 8em 15em 24em 15em; 
   width: 100%;
   overflow: hidden;
   font-size: 0.7em;
@@ -19,7 +19,7 @@
 
 .scrollable-table-wrapper {
   /* width: 80% !important; width of table */
-  max-height: calc(35em - 1em);
+  max-height: calc(30em - 1em);
   overflow-y: auto;
   border: 1px solid gray;
   border-radius: 5px;
@@ -79,7 +79,7 @@
 
 .seach-bar{
   padding: 0.3em 0.75em;
-  width: 20em;
+  width: 15em;
   border-radius: 12px;
   border: 1px solid black;
   outline: none;
@@ -93,12 +93,12 @@
   bottom: 0;
   z-index: 5;
   background-color: rgb(248, 248, 248);
-  padding: 3em 10em 4em 10em; 
+  padding: 1.9em 10em 2.9em 10em; 
   width: 100%;
   border-radius: 5px;
   font-size: 0.75em;
   box-shadow: 1px 1px 6px 1px rgba(16, 16, 16, 0.2);
-  max-height: 18em;
+  max-height: 19em;
   overflow: scroll;
 }
 
@@ -121,13 +121,13 @@
 /* alert meassage */
 .alert-message{
   z-index: 20;
-  padding: 0.75em 1.8em;
-  font-size: 0.75em;
-  font-weight: 600;
-  background-color: rgb(39, 39, 39, 0.9);
+  padding: 0.6em 1.8em;
+  font-size: 0.7em;
+  font-weight: 500;
+  color: rgb(40, 40, 40) !important;
   border-radius: 5px;
   color: white;
   position: fixed;
-  bottom: 20em;
+  bottom: 22em;
   left: 1em;
 }

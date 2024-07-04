@@ -3,10 +3,18 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
 import { library } from '@fortawesome/fontawesome-svg-core';
-import { faTimes, faDownload, faSort } from '@fortawesome/free-solid-svg-icons';
+import {
+  faTimes,
+  faDownload,
+  faSort,
+  faCheck,
+  faC,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
-import baseURL from '../../../config/env.js';
+import { baseURL, apiUsername, apiPassword } from '../../../config/env.js';
+
+import clearFilter from '../assets/images/clear-filter.png';
 
 const Index = () => {
   // Define state to store fetched data
@@ -18,6 +26,7 @@ const Index = () => {
   const [year, setYear] = useState('');
   const [country, setCountry] = useState('');
   const [status, setStatus] = useState('');
+  const [isUnorderedList, setIsUnorderedList] = useState(true);
   const [searchString, setSearchString] = useState('');
 
   const [sortColumn, setSortColumn] = useState('last_updated'); // Initial sort column
@@ -26,11 +35,16 @@ const Index = () => {
   const [showAddedRowMessage, setShowAddedRowMessage] = useState(false);
   const [showRemovedRowMessage, setShowRemovedRowMessage] = useState(false);
 
+  const [errorMessageLivoniaButton, setErrorMessageLivoniaButton] = useState(false);
+  const [errorMessageRunD2Button, setErrorMessageRunD2Button] = useState("");
+
+  // const [disableButton, setDisableButton] = useState(false);
+
   const fetchProjects = async () => {
     setLoading(true);
     try {
       const response = await axios.get(`${baseURL}/api/projects`, {
-        params: { year, country, status, searchString },
+        params: { year, country, status, isUnorderedList, searchString },
       });
       console.log('Fetched projects:', response.data);
       setProjects(response.data);
@@ -52,42 +66,40 @@ const Index = () => {
 
   useEffect(() => {
     fetchProjects();
-  }, [year, country, status, searchString]);
-
+  }, [year, country, status, searchString, isUnorderedList]);
 
   const handleSort = (column) => {
-  if (column === sortColumn) {
-    setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-  } else {
-    setSortColumn(column);
-    setSortDirection('desc');
-  }
-
-  const sortedProjects = [...projects].sort((a, b) => {
-    if (column === 'production_type') {
-      // Handle sorting for 'CWS type' column specifically
-      if (sortDirection === 'asc') {
-        if (a[column] === 'internal' && b[column] !== 'internal') return -1;
-        if (a[column] !== 'internal' && b[column] === 'internal') return 1;
-        return a[column] > b[column] ? 1 : -1;
-      } else {
-        if (a[column] === 'internal' && b[column] !== 'internal') return 1;
-        if (a[column] !== 'internal' && b[column] === 'internal') return -1;
-        return a[column] < b[column] ? 1 : -1;
-      }
+    if (column === sortColumn) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
-      // Default sorting for other columns
-      if (sortDirection === 'asc') {
-        return a[column] > b[column] ? 1 : -1;
-      } else {
-        return a[column] < b[column] ? 1 : -1;
-      }
+      setSortColumn(column);
+      setSortDirection('desc');
     }
-  });
 
-  setProjects(sortedProjects);
-};
+    const sortedProjects = [...projects].sort((a, b) => {
+      if (column === 'production_type') {
+        // Handle sorting for 'CWS type' column specifically
+        if (sortDirection === 'asc') {
+          if (a[column] === 'internal' && b[column] !== 'internal') return -1;
+          if (a[column] !== 'internal' && b[column] === 'internal') return 1;
+          return a[column] > b[column] ? 1 : -1;
+        } else {
+          if (a[column] === 'internal' && b[column] !== 'internal') return 1;
+          if (a[column] !== 'internal' && b[column] === 'internal') return -1;
+          return a[column] < b[column] ? 1 : -1;
+        }
+      } else {
+        // Default sorting for other columns
+        if (sortDirection === 'asc') {
+          return a[column] > b[column] ? 1 : -1;
+        } else {
+          return a[column] < b[column] ? 1 : -1;
+        }
+      }
+    });
 
+    setProjects(sortedProjects);
+  };
 
   const formatDateTime = (dateTimeString) => {
     const date = new Date(dateTimeString);
@@ -99,6 +111,42 @@ const Index = () => {
     const seconds = String(date.getSeconds()).padStart(2, '0');
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   };
+
+    // Function to check if any object in selectedData has D2 === null
+    const checkD2Null = () => {
+      let D2isNull = "";
+      let NoneNulls = "";
+      for (let i = 0; i < selectedData.length; i++) {
+        if (selectedData[i].data.D2 === null) {
+          D2isNull = true;
+          console.log(selectedData[i]);
+          // break; 
+        } else if (selectedData[i].data.D2 !== null) {
+          NoneNulls = true;
+        }
+      }
+      if (D2isNull) {
+        // setDisableButton(true);
+        setErrorMessageLivoniaButton(true);
+        // setErrorMessageRunD2Button(true);
+        console.log('D2 is null: one or more items have D2 as null');
+      } else {
+        // setDisableButton(false);
+        setErrorMessageLivoniaButton(false);
+        // setErrorMessageRunD2Button(false);
+        console.log('No nulls: no item has D2 as null');
+      }
+
+      if (NoneNulls) {
+        setErrorMessageRunD2Button(true);
+      }else{
+        setErrorMessageRunD2Button(false);
+      }
+    };
+    // useEffect to call checkD2Null whenever selectedData changes
+    useEffect(() => {
+      checkD2Null();
+    }, [selectedData]);
 
   const AddRow = (index, data) => {
     console.log(index);
@@ -136,6 +184,7 @@ const Index = () => {
   const ClearAllSelected = () => {
     setSelectedIndices([]);
     setSelectedData([]);
+    // setDisableButton(false);
     setShowRemovedRowMessage(true);
     setTimeout(() => {
       setShowRemovedRowMessage(false);
@@ -172,9 +221,80 @@ const Index = () => {
   };
   const handleSearchString = (search) => {
     setSearchString(search);
-    console.log(search)
     setSelectedIndices([]);
   };
+  const resetFilter = () => {
+    setYear('');
+    setCountry('');
+    setStatus('');
+    setSearchString('');
+    setIsUnorderedList(true);
+  };
+
+  const handleCheckboxChange = () => {
+    setIsUnorderedList(!isUnorderedList);
+    console.log(isUnorderedList);
+  };
+
+  const runD2 = async () => {
+    console.log("D2 triggered");
+
+    try {
+      // Using Promise.all to await all requests concurrently
+      console.log(apiUsername, apiPassword)
+      await Promise.all(selectedData.map(async (data) => {
+        const job_uuid = data.data.uuid;
+        console.log(job_uuid);
+        
+        try {
+          const response = await axios.get(
+            `https://shop.expressbild.se/api/v1/jobs/${job_uuid}/subjects`,
+            {
+              auth: {
+                username: apiUsername,
+                password: apiPassword
+              },
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+          // const responseArray = response.data
+          // .filter(d => d.data_2 === "1")
+          // console.log(responseArray);
+          // return responseArray;
+
+          const responseArray = response.data
+          .filter(d => d.data_2 === "1")
+          .map(item => ({
+            data_2: item.data_2,
+            orderuuid: item.uuid,
+            subjectuuid: item.uuid,
+            deliveryname: item.delivery_1.name,
+            deliveryaddress: item.delivery_1.address,
+            deliverypostalcode: item.delivery_1.postal_code,
+            deliverycity: item.delivery_1.city,
+            useremail: item.delivery_1.email_address,
+            usermobile: item.delivery_1.mobile_phone,
+            socialnumber: item.pid_number,
+            subjectname: item.name,
+            team: item.group,
+            username: item.name,
+          }));
+          console.log(responseArray);
+          return responseArray;
+
+        } catch (error) {
+          console.log("Error fetching data from Netlife: ", error);
+        }
+      }));
+    } catch (error) {
+      console.log("Error in runD2 function: ", error);
+      return [];
+    }
+  };
+  
+
 
   return (
     <div className="wrapper">
@@ -243,16 +363,37 @@ const Index = () => {
               <option value="">CWS ready</option>
             </select>
           </label>
+
+          <div className="mt-1 mr-1 ml-2 checkbox-container">
+            <input
+              className="mr-2"
+              type="checkbox"
+              checked={isUnorderedList}
+              onChange={handleCheckboxChange}
+            />
+            <label>Ordered list</label>
+          </div>
+
           <div>
             <label>
               Search:
-            <input 
-              placeholder='Search for project...'
-              className="ml-2 seach-bar"
-              onChange={(e) => handleSearchString(e.target.value) }
-              >
-              </input>
+              <input
+                placeholder="Search for project..."
+                className="ml-2 seach-bar"
+                value={searchString}
+                onChange={(e) => handleSearchString(e.target.value)}
+              ></input>
             </label>
+          </div>
+          <div>
+            <img
+              className="ml-4 clear-filter-button"
+              src={clearFilter}
+              alt="clear filter icon"
+              icon={faTimes}
+              onClick={() => resetFilter()}
+              title="Clear filter"
+            ></img>
           </div>
         </div>
 
@@ -260,12 +401,25 @@ const Index = () => {
           <table className="result-table">
             <thead>
               <tr>
-                <th onClick={() => handleSort('name')}>Project  <FontAwesomeIcon icon={faSort} /></th>
-                <th onClick={() => handleSort('D2')}>D2  <FontAwesomeIcon icon={faSort} /></th>
-                <th onClick={() => handleSort('num_orders')}>Orders  <FontAwesomeIcon icon={faSort} /></th>
-                <th onClick={() => handleSort('new_orders')}>New orders  <FontAwesomeIcon icon={faSort} /></th>
-                <th onClick={() => handleSort('production_type')}>CWS type  <FontAwesomeIcon icon={faSort} /></th>
-                <th onClick={() => handleSort('last_updated')}>Last updated  <FontAwesomeIcon icon={faSort} /></th>
+                <th onClick={() => handleSort('name')}>
+                  Project (Results: {projects.length}){' '}
+                  <FontAwesomeIcon icon={faSort} />
+                </th>
+                <th onClick={() => handleSort('D2')}>
+                  D2 <FontAwesomeIcon icon={faSort} />
+                </th>
+                <th onClick={() => handleSort('num_orders')}>
+                  Orders <FontAwesomeIcon icon={faSort} />
+                </th>
+                <th onClick={() => handleSort('new_orders')}>
+                  New orders <FontAwesomeIcon icon={faSort} />
+                </th>
+                <th onClick={() => handleSort('production_type')}>
+                  CWS type <FontAwesomeIcon icon={faSort} />
+                </th>
+                <th onClick={() => handleSort('last_updated')}>
+                  Last updated <FontAwesomeIcon icon={faSort} />
+                </th>
               </tr>
             </thead>
             {loading ? (
@@ -304,7 +458,13 @@ const Index = () => {
                         </span>
                       )}
                     </td>
-                    <td>{p.D2 !== null ? formatDateTime(p.D2) : '---'}</td>
+                    <td title={p.D2 !== null ? formatDateTime(p.D2) : "null"}>
+                      {p.D2 !== null ? (
+                        <FontAwesomeIcon icon={faCheck} />
+                      ) : (
+                        '---'
+                      )}
+                    </td>
                     <td>{p.num_orders}</td>
                     <td
                       style={{
@@ -340,7 +500,7 @@ const Index = () => {
             <h6 style={{ fontSize: '1.2em' }}>
               Amount selected: <br></br> <b>{selectedData.length}</b>
             </h6>
-            {selectedIndices.length > 0 && (
+            {selectedData.length > 0 && (
               <div>
                 <button className="clearall-button" onClick={ClearAllSelected}>
                   Clear all
@@ -370,17 +530,19 @@ const Index = () => {
                 <tr key={data.data.uuid}>
                   <td>
                     <FontAwesomeIcon
-                      className='remove-selected-data-button'
+                      className="remove-selected-data-button"
                       icon={faTimes}
                       onClick={() => removeSelectedData(data.index)}
                       title="Remove project"
                     />
                   </td>
                   <td data-uuid={data.data.uuid}>{data.data.name}</td>
-                  <td>
-                    {data.data.D2 !== null
-                      ? formatDateTime(data.data.D2)
-                      : '---'}
+                  <td title={data.data.D2 !== null ? formatDateTime(data.data.D2) : "null"} style={{ color: data.data.D2 === null ? 'red' : '' }}>
+                    {data.data.D2 !== null ? (
+                      <FontAwesomeIcon icon={faCheck} />
+                    ) : (
+                      '---'
+                    )}
                   </td>
                   <td>{data.data.num_orders}</td>
                   <td>
@@ -389,28 +551,39 @@ const Index = () => {
                   <td>
                     <button className="mr-2 table-button">Open in EBSS</button>
                   </td>
-                  <td>
-                    <button className="mr-2 table-button">Send to CWS</button>
-                  </td>
+                  {/* <td>
+                    <button className="mr-2 table-button">Send to Engine</button>
+                  </td> */}
                 </tr>
               ))}
             </tbody>
           </table>
           <div className="mt-3">
             <hr></hr>
-            <button className="mr-2 button runD2">Run D2</button>
-            <button className="button">
-              {' '}
-              <FontAwesomeIcon icon={faDownload} title="Download" />
+            <button onClick={runD2} className="mr-2 button runD2" disabled={errorMessageRunD2Button} title={errorMessageRunD2Button ? "Some choosen projects has already been run by D2" : "Run D2"}>Run D2</button>
+            <button className="mr-2 button">Send to Engine</button>
+            <button className="button" disabled={errorMessageLivoniaButton} title={errorMessageLivoniaButton ? "At least one of your selected projects needs to be run by D2 in order to click 'Livonia'" : "Livonia"}>
+              Livonia
             </button>
+            {errorMessageLivoniaButton && (
+              <div>
+              <h6 className='mt-2' style={{ color: "black", fontSize: "0.9em" }} >Livonia button: Not all projects has been run by D2</h6>
+              </div>
+            )}
+             {errorMessageRunD2Button && (
+              <div>
+              <h6 className='mt-2' style={{ color: "black", fontSize: "0.9em" }} >RunD2 button: Some choosen projects has already been run by D2</h6>
+              </div>
+            )}
           </div>
         </div>
       )}
 
+      {/* Showing alert message when removing and adding project to/from selected project list  */}
       {showAddedRowMessage && (
         <div
           className="alert-message"
-          style={{ backgroundColor: '#C8FFAB', color: 'black', border: "0.5px solid green" }}
+          style={{ backgroundColor: '#C8FFAB', border: '0.5px solid green' }}
         >
           Project added
         </div>
@@ -418,7 +591,7 @@ const Index = () => {
       {showRemovedRowMessage && (
         <div
           className="alert-message"
-          style={{ backgroundColor: '#FFBCAB', color: 'black', border: "0.5px solid red" }}
+          style={{ backgroundColor: '#FFBCAB', border: '0.5px solid red' }}
         >
           Project removed
         </div>

@@ -56,3 +56,16 @@
     background-color: black;
     cursor: pointer;
 }
+
+.clear-filter-button{
+    background-color: rgb(242, 242, 242);
+    padding: 0.4em;
+    transition: 0.2s;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 2.5em;
+
+}
+.clear-filter-button:hover{
+    background-color: rgb(228, 228, 228);
+}

@@ -5,4 +5,8 @@ const baseURL = process.env.NODE_ENV === 'production'
   ? 'enter-api-here'
   : 'http://localhost:3001'; 
 
-export default baseURL;
+  const apiUsername = "lucas.hammarstrand@hotmail.com";
+  const apiPassword = "Express4040";
+  const serverPassword = "1pJiZWW6GPo";
+  
+  export { baseURL, apiUsername, apiPassword };
