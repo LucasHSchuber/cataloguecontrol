@@ -1,8 +1,8 @@
-const express = require('express');
-const mysql = require('mysql');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const dbConfig = require('./DbConfig.js'); 
+const express = require("express");
+const mysql = require("mysql");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const dbConfig = require("./DbConfig.js");
 
 const app = express();
 const port = 3001;
@@ -11,90 +11,145 @@ const port = 3001;
 app.use(cors());
 app.use(bodyParser.json());
 
+// Increase the payload limit to 10MB 
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
+
 // MySQL Connection Pool
 const pool = mysql.createPool(dbConfig);
-// const pool = mysql.createPool({
-//   connectionLimit: 10, // Adjust as per your requirement
-//   host: 'mysql512.loopia.se',
-//   user: 'expbil01@e361369',
-//   password: 'm!1pJiZWW6GPo&',
-//   database: 'expressbild_org_db_14',
-//   port: '3306'
-// });
-
 
 // API endpoint to fetch data by orderuuid from MySQL
-app.get('/api/data/neo_projects', (req, res) => {
-  const { jobuuid } = req.query;
-  console.log(jobuuid);
-
-  // if (!jobuuid) {
-  //   return res.status(400).json({ error: 'jobuuid parameter is required' });
-  // }
-
-  const query = 'SELECT uuid, name, catalogues FROM neo_projects';
+app.get("/api/neo_projects", (req, res) => {
+  const query = "SELECT uuid, name, catalogues FROM neo_projects";
   pool.query(query, (err, results) => {
     if (err) {
-      console.error('Error fetching data from neo_projects:', err);
-      return res.status(500).send('Error fetching data from neo_projects');
+      console.error("Error fetching data from neo_projects:", err);
+      return res.status(500).send("Error fetching data from neo_projects");
     } else {
       res.json(results);
     }
-
   });
 });
 
-
 // API endpoint to fetch net_catalogue_projects from MySQL
-app.get('/api/data/net_catalogue_projects', (req, res) => {
-  const query = 'SELECT portaluuid, uuid FROM net_catalogue_projects';
+app.get("/api/net_catalogue_projects", (req, res) => {
+  const query = "SELECT portaluuid, uuid FROM net_catalogue_projects";
   pool.query(query, (err, results) => {
     if (err) {
-      console.error('Error fetching net_catalogue_projects:', err);
-      res.status(500).send('Error fetching net_catalogue_projects');
+      console.error("Error fetching net_catalogue_projects:", err);
+      res.status(500).send("Error fetching net_catalogue_projects");
     } else {
       res.json(results); // Correct the response format
     }
   });
 });
 
-
-
-// API endpoint to insert records into net_catalogue_orders
-app.post('/api/net_catalogue_orders', (req, res) => {
-  const orders = req.body; // Expecting an array of order objects
-
-  if (!Array.isArray(orders) || orders.length === 0) {
-    return res.status(400).send('Invalid input data');
+// API endpoint to update D2 and statys in net_catalogue_projects
+app.post("/api/net_catalogue_projects", (req, res) => {
+  const { project_id } = req.body;
+  console.log("project_id:", project_id);
+  if (!project_id) {
+    return res.status(400).send("Missing project_id in request body");
   }
-
-  const values = orders.map(order => [
-    order.order_id,
-    order.project_id,
-    order.status,
-    order.created_at,
-    order.updated_at,
-    // add other fields as necessary
-  ]);
-
-  const query = `
-    INSERT INTO net_catalogue_orders (order_id, project_id, status, created_at, updated_at)
-    VALUES ?
-  `;
-
-  pool.query(query, [values], (err, results) => {
+  const query = "UPDATE net_catalogue_projects SET D2 = NOW(), status = 2 WHERE uuid = ?";
+  const values = [project_id]; 
+  pool.query(query, values, (err, results) => {
     if (err) {
-      console.error('Error inserting into net_catalogue_orders:', err);
-      res.status(500).send('Error inserting into net_catalogue_orders');
+      console.error("Error updating net_catalogue_projects:", err);
+      res.status(500).send("Error updating net_catalogue_projects");
     } else {
-      res.status(201).json({ message: 'Records inserted successfully', insertId: results.insertId });
+      res.status(200).json({ message: "Record updated successfully", affectedRows: results.affectedRows });
     }
   });
 });
 
 
+// API endpoint to insert records into net_catalogue_orders
+app.post("/api/net_catalogue_orders", (req, res) => {
+  const orders = req.body;
+
+  if (!Array.isArray(orders) || orders.length === 0) {
+    return res.status(400).send("Invalid input data: Expected non-empty array of orders");
+  }
+
+  const existingSubjectUuidsQuery =
+    "SELECT subjectuuid FROM net_catalogue_orders WHERE subjectuuid IN (?)";
+
+  const subjectUuids = orders.map((order) => order.subjectuuid);
+
+  pool.query(existingSubjectUuidsQuery, [subjectUuids], (err, result) => {
+    if (err) {
+      console.error("Error checking existing subjectuuids:", err);
+      return res.status(500).send("Error checking existing subjectuuids");
+    }
+
+    const existingSubjectUuids = new Set(
+      result.map((result) => result.subjectuuid),
+    );
+
+    const newOrders = orders.filter(
+      (order) => !existingSubjectUuids.has(order.subjectuuid),
+    );
+
+    if (newOrders.length === 0) {
+      return res.status(200).json({ message: "No new orders to insert" });
+    }
+
+    const values = newOrders.map((order) => [
+      order.catalogues[0].price,
+      order.catalogues[0].vatvalue,
+      order.data_2,
+      order.deliveryaddress,
+      order.deliverycity,
+      order.deliveryname,
+      order.deliverypostalcode,
+      order.orderuuid,
+      order.portaluuid,
+      order.project_id,
+      order.projectname,
+      order.socialnumber,
+      order.subjectname,
+      order.subjectuuid,
+      order.team,
+      order.useremail,
+      order.usermobile,
+      order.username,
+      "NO ORDER",
+      "NULL"
+    ]);
+
+    console.log(`Number of new orders to insert: ${values.length}`);
+
+    const insertQuery = `
+    INSERT INTO net_catalogue_orders (
+      price, vatvalue,
+      status, deliveryaddress, deliverycity, deliveryname,
+      deliverypostalcode, orderuuid, portaluuid,
+      project_id, project, socialnumber, subjectname,
+      subjectuuid, team, useremail, usermobile, username, original_orderuuid, order_created
+    )
+    VALUES ?
+    `;
+    pool.query(insertQuery, [values], (err, results) => {
+      if (err) {
+        console.error("Error inserting into net_catalogue_orders:", err);
+        res.status(500).send("Error inserting into net_catalogue_orders");
+      } else {
+        const insertedOrders = newOrders.map((order, index) => ({
+          ...order,
+          insertId: results.insertId + index 
+        }));
+        res.status(201).json({
+          message: "Records inserted successfully",
+          insertedOrders: insertedOrders
+        });
+      }
+    });
+  });
+});
+
 // fetch relevant project data for catalog control
-app.get('/api/projects', (req, res) => {
+app.get("/api/projects", (req, res) => {
   const { year, country, status, isUnorderedList, searchString } = req.query;
   console.log("req.query from client", req.query);
 
@@ -110,7 +165,7 @@ app.get('/api/projects', (req, res) => {
   `;
 
   if (year) {
-    query += ` AND p2.name LIKE '%${pool.escape(year).replace(/'/g, '')}%'`;
+    query += ` AND p2.name LIKE '%${pool.escape(year).replace(/'/g, "")}%'`;
   }
 
   if (country) {
@@ -127,7 +182,7 @@ app.get('/api/projects', (req, res) => {
   }
 
   if (searchString) {
-    query += ` AND p2.name LIKE '%${pool.escape(searchString).replace(/'/g, '')}%'`;
+    query += ` AND p2.name LIKE '%${pool.escape(searchString).replace(/'/g, "")}%'`;
   }
 
   // query += ` GROUP BY p1.uuid ORDER BY p1.last_updated DESC LIMIT 2000`;
@@ -139,20 +194,18 @@ app.get('/api/projects', (req, res) => {
 
   pool.query(query, (err, results) => {
     if (err) {
-      console.error('Error fetching /api/projects:', err);
-      res.status(500).send('Error fetching /api/projects');
+      console.error("Error fetching /api/projects:", err);
+      res.status(500).send("Error fetching /api/projects");
     } else {
       res.json(results);
     }
   });
 });
 
-
-
 // Start server
 app.listen(port, () => {
-  console.log("----------------------------------------")
-  console.log("Ready!")
-  console.log("Control Cataglog server successfully started...")
+  console.log("----------------------------------------");
+  console.log("Ready!");
+  console.log("Control Cataglog server successfully started...");
   console.log(`Server running on http://localhost:${port}`);
 });

@@ -31,3 +31,12 @@
     text-decoration: none;
   }
   
+  /* loader */
+  .loader-D2 {
+    height: 0em !important;
+    position: fixed;
+    top: 20em;
+    left: 50%; 
+    z-index: 1000;
+  }
+  
