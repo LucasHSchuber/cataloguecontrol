@@ -29,6 +29,7 @@ const Index = () => {
   const [selectedData, setSelectedData] = useState([]);
   const [selectedData2, setSelectedData2] = useState([]);
   const [updatedData, setUpdatedData] = useState([]);
+  const [updatedDataMessage, setUpdatedDataMessage] = useState([]);
   const [uuidArray, setUuidArray] = useState([]);
 
   const [year, setYear] = useState('');
@@ -71,7 +72,6 @@ const Index = () => {
       // });
       // console.log("Recent updated data:", matchingProjects);
       // setSelectedData(matchingProjects);
-
     } catch (error) {
       console.error('Error fetching projects:', error);
       if (error.response) {
@@ -98,39 +98,72 @@ const Index = () => {
     selectedData2
   ]);
 
+  // //fetch neo_projects and update responseArray
+  // const fetchNeoProjectsForOrders = async (responseArray) => {
+  //   try {
+  //     const response = await axios.get(`${baseURL}/api/neo_projects`);
+  //     // console.log('Fetched neo_projects:', response.data);
+  //     responseArray.forEach((item) => {
+  //       const matchingProject = response.data.find(
+  //         (project) => project.uuid === item.job_uuid
+  //       );
+  //       if (matchingProject) {
+  //         // console.log("MATCHED!!!")
+  //         item.projectname = matchingProject.name; // Add projectName
+  //         // Parse catalogues JSON string
+  //         try {
+  //           const catalogues = JSON.parse(matchingProject.catalogues);
+  //           item.catalogues = catalogues.map((catalogue) => ({
+  //             name: catalogue.name,
+  //             price: catalogue.price,
+  //             vatvalue: catalogue.price - catalogue.price * 0.9434,
+  //           }));
+  //         } catch (error) {
+  //           console.error('Error parsing catalogues JSON:', error);
+  //         }
+  //       } else {
+  //         console.log(`No match found for orderuuid: ${item.jobuuid}`);
+  //       }
+  //     });
+  //     fetchCatalogProjects(responseArray);
+  //     // console.log('Updated responseArray:', responseArray);
+  //   } catch (error) {
+  //     console.error('Error fetching neo_projects:', error);
+  //   }
+  // };
+
   //fetch neo_projects and update responseArray
-  const fetchNeoProjectsForOrders = async (responseArray) => {
+const fetchNeoProjectsForOrders = async (responseArray) => {
     try {
       const response = await axios.get(`${baseURL}/api/neo_projects`);
-      // console.log('Fetched neo_projects:', response.data);
+      const neoProjects = response.data;
+      
+      const nonMatchingItems = [];
+
       responseArray.forEach((item) => {
-        const matchingProject = response.data.find(
+        const matchingProject = neoProjects.find(
           (project) => project.uuid === item.job_uuid
         );
-        if (matchingProject) {
-          // console.log("MATCHED!!!")
-          item.projectname = matchingProject.name; // Add projectName
-          // Parse catalogues JSON string
-          try {
-            const catalogues = JSON.parse(matchingProject.catalogues);
-            item.catalogues = catalogues.map((catalogue) => ({
-              name: catalogue.name,
-              price: catalogue.price,
-              vatvalue: catalogue.price - catalogue.price * 0.9434,
-            }));
-          } catch (error) {
-            console.error('Error parsing catalogues JSON:', error);
-          }
-        } else {
-          console.log(`No match found for orderuuid: ${item.jobuuid}`);
+
+        if (!matchingProject) {
+          nonMatchingItems.push(item);
         }
       });
-      fetchCatalogProjects(responseArray);
-      // console.log('Updated responseArray:', responseArray);
+
+      // Log or process non-matching items
+      if (nonMatchingItems.length > 0) {
+        console.log('Non-matching items:', nonMatchingItems);
+        // Send non-matching items to fetchCatalogProjects
+        fetchCatalogProjects(nonMatchingItems); 
+      } else {
+        console.log('All items matched successfully');
+        uppdateNetCatalogueProjects(responseArray)
+      }
     } catch (error) {
       console.error('Error fetching neo_projects:', error);
     }
   };
+
 
   //fetch net_ataloue_projects and update responseArray
   const fetchCatalogProjects = async (responseArray) => {
@@ -190,7 +223,25 @@ const Index = () => {
           batch
         );
 
+        const insertedOrders = responseAddTuppel.data.insertedOrders;
+        const message = responseAddTuppel.data.message
+        const insertedOrdersAmount = responseAddTuppel.data.insertedOrders.length
+
+        console.log(responseAddTuppel)
+        // console.log(responseAddTuppel.data.insertedOrders[0].job_uuid)
+        console.log(responseAddTuppel.data.message)
+        console.log(responseAddTuppel.data.insertedOrders.length)
+        // setUpdatedDataMessage(responseAddTuppel.data.insertedOrders.lengt)
+
       if (responseAddTuppel.data && responseAddTuppel.data.insertedOrders) {
+        // Create an object with job_uuid and message
+        const messageObject = {
+          job_uuid: insertedOrders[0].job_uuid,
+          message: message,
+          insertedOrdersAmount: insertedOrdersAmount,
+          selectedData: selectedData.find(data => data.data.uuid === responseAddTuppel.data.insertedOrders[0].job_uuid) || {}
+        };
+        setUpdatedDataMessage(prevState => [...prevState, messageObject]);
         console.log(
           `Successfully sent batch of ${batch.length} and ${responseAddTuppel.data.insertedOrders.length} tuples were inserted`,
           responseAddTuppel
@@ -216,12 +267,12 @@ const Index = () => {
   const uppdateNetCatalogueProjects = async (responseArray) => {
     console.log(
       'project_id sent to net_catalogue_projects',
-      responseArray[0].project_id
+      responseArray[0].job_uuid
     );
     try {
       const updatePromises = responseArray.map((item) =>
         axios.post(`${baseURL}/api/net_catalogue_projects`, {
-          project_id: item.project_id,
+          project_id: item.job_uuid,
         })
       );
   
@@ -257,6 +308,8 @@ const Index = () => {
     setTimeout(() => {
       setShowD2SuccessMessage(false);
     }, 2000);
+
+    console.log(updatedDataMessage)
   }
 
   // handle sorting
@@ -377,6 +430,7 @@ const Index = () => {
     setSelectedIndices([]);
     setUuidArray([])
     setSelectedData([]);
+    setUpdatedDataMessage([]);
     setShowRemovedRowMessage(true);
     setTimeout(() => {
       setShowRemovedRowMessage(false);
@@ -435,6 +489,7 @@ const Index = () => {
     console.log('-----------------------------');
     setLoadingD2(true);
     setUuidArray([]);
+    setUpdatedDataMessage([]);
     try {
       // Using Promise.all to await all requests concurrently
       // console.log(apiUsername, apiPassword);
@@ -705,9 +760,17 @@ const Index = () => {
         </div>
 
         {/* updated data table */}
-      {updatedData && updatedData.length > 0 && (
+      {updatedDataMessage && updatedDataMessage.length > 0 && (
         <div className="mt-4 updated-data-box">
           {/* <h6><b>Ran by D2:</b></h6> */}
+          {/* <h6><b>{updatedDataMessage}</b></h6> */}
+          {/* {updatedDataMessage.map((data) => (
+            <div>
+              <h6>{data.insertedOrdersAmount}</h6>
+              <h6>{data.message}</h6>
+              <h6>{data.job_uuid}</h6>
+            </div>
+          ))} */}
           <button 
             style={{ float: "right", border: "none" }} 
             onClick={() => setUpdatedData([])}
@@ -721,33 +784,40 @@ const Index = () => {
           <table className="updated-data-table">
             <thead>
               <tr>
-                <th>Project ({updatedData.length})</th>
+                <th>Project ({updatedDataMessage.length})</th>
                 <th>D2</th>
                 <th>Orders</th>
                 <th>New orders</th>
                 <th></th>
-                <th></th>
+                <th>Inserted</th>
+                <th>Msg</th>
               </tr>
             </thead>
             <tbody className="selected-data-table-body">
-              {updatedData.map((data) => (
-                <tr key={data.data.uuid}>
-                  <td data-uuid={data.data.uuid}>{data.data.name}</td>
+              {updatedDataMessage.map((data) => (
+                <tr key={data.selectedData.data.uuid}>
+                  <td data-uuid={data.selectedData.data.uuid}>{data.selectedData.data.name}</td>
                   <td
                     title={
-                      data.data.D2 !== null
-                        ? formatDateTime(data.data.D2)
+                      data.selectedData.data.D2 !== null
+                        ? formatDateTime(data.selectedData.data.D2)
                         : 'null'
                     }
                   >
                     <FontAwesomeIcon icon={faCheck} />
                   </td>
-                  <td>{data.data.num_orders}</td>
+                  <td>{data.selectedData.data.num_orders}</td>
                   <td>
-                    {data.data.D2 ? data.data.new_orders : data.data.num_orders}
+                    {data.selectedData.data.D2 ? data.selectedData.data.new_orders : data.selectedData.data.num_orders}
                   </td>
                   <td>
                     <button className="mr-2 table-button">Open in EBSS</button>
+                  </td>
+                  <td>
+                    {data.insertedOrdersAmount}
+                  </td>
+                  <td>
+                    {data.message}
                   </td>
                 </tr>
               ))}
