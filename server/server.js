@@ -188,7 +188,7 @@ app.get("/api/projects", (req, res) => {
   // query += ` GROUP BY p1.uuid ORDER BY p1.last_updated DESC LIMIT 2000`;
   query += ` GROUP BY p1.uuid, p1.portaluuid, p1.status, p1.D2, p2.name, d.production_type, p1.last_updated, p1.num_orders 
   ORDER BY p1.last_updated DESC 
-  LIMIT 2000`;
+  `;
 
   console.log("FINAL QUERY:", query);
 

@@ -37,6 +37,6 @@
     position: fixed;
     top: 20em;
     left: 50%; 
-    z-index: 1000;
+    z-index: 2000;
   }
   

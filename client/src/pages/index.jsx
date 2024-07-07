@@ -28,6 +28,8 @@ const Index = () => {
   const [selectedIndices, setSelectedIndices] = useState([]);
   const [selectedData, setSelectedData] = useState([]);
   const [selectedData2, setSelectedData2] = useState([]);
+  const [updatedData, setUpdatedData] = useState([]);
+  const [uuidArray, setUuidArray] = useState([]);
 
   const [year, setYear] = useState('');
   const [country, setCountry] = useState('');
@@ -40,6 +42,7 @@ const Index = () => {
 
   const [showAddedRowMessage, setShowAddedRowMessage] = useState(false);
   const [showRemovedRowMessage, setShowRemovedRowMessage] = useState(false);
+  const [showD2SuccessMessage, setShowD2SuccessMessage] = useState(false);
 
   const [errorMessageLivoniaButton, setErrorMessageLivoniaButton] =
     useState(false);
@@ -56,6 +59,19 @@ const Index = () => {
       console.log('Fetched projects:', response.data);
       setProjects(response.data);
       setLoading(false);
+
+      //  // Map UUIDs to projects and include a data array
+      //  const matchingProjects = uuidArray.map(uuid => {
+      //   const project = response.data.find(project => project.uuid === uuid) 
+      //   return {
+      //     data: {
+      //       ...project,
+      //     },
+      //   };
+      // });
+      // console.log("Recent updated data:", matchingProjects);
+      // setSelectedData(matchingProjects);
+
     } catch (error) {
       console.error('Error fetching projects:', error);
       if (error.response) {
@@ -78,7 +94,8 @@ const Index = () => {
     country,
     status,
     searchString,
-    isUnorderedList
+    isUnorderedList,
+    selectedData2
   ]);
 
   //fetch neo_projects and update responseArray
@@ -138,7 +155,7 @@ const Index = () => {
       });
 
       saveJoinedArray(responseArray);
-      console.log('Updated responseArray:', responseArray);
+      // console.log('Updated responseArray:', responseArray);
     } catch (error) {
       console.error('Error fetching net_catalogue_projects:', error);
     }
@@ -189,6 +206,7 @@ const Index = () => {
 
       uppdateNetCatalogueProjects(responseArray);
       console.log('All tuples added successfully!');
+      console.log("---");
     } catch (error) {
       console.error('Error adding tuples to net_catalogue_order', error);
     }
@@ -201,23 +219,47 @@ const Index = () => {
       responseArray[0].project_id
     );
     try {
-      // for (let i = 0; i < responseArray.length; i++) {
-        const response = await axios.post(`${baseURL}/api/net_catalogue_projects`, {
-          project_id: responseArray[0].project_id,
-        });
-        // console.log(`Successfully updated net_catalogue_projects for project_id ${responseArray[i].project_id}`, response);
-      // }
-      console.log("Successfully updating net_catalogue_projects", response);
-      setLoadingD2(false);
-      // setSelectedData2(selectedData);
-      // setSelectedData([]);
-      setSelectedIndices([]);
+      const updatePromises = responseArray.map((item) =>
+        axios.post(`${baseURL}/api/net_catalogue_projects`, {
+          project_id: item.project_id,
+        })
+      );
+  
+      await Promise.all(updatePromises);
+  
+      console.log("---");
+      console.log("All projects updated successfully");
+      console.log("---");
+      // const uuidArray = selectedData.map(item => item.data.uuid);
+      // console.log('UUID Array:', uuidArray);
+      // setUuidArray(uuidArray);
+      finishD2();
+    
     } catch (error) {
       console.error('Error updating net_catalogue_projects', error);
       setLoadingD2(false);
     }
   };
 
+  const finishD2 = () => {
+    //selecteddata2 used for alert message
+    setUpdatedData(selectedData);
+    setSelectedData([]);
+    setSelectedIndices([]);
+    // setCountry("")
+    setYear("")
+    setStatus("")
+    setIsUnorderedList(true)
+    setSearchString("")
+    setLoadingD2(false);
+
+    setShowD2SuccessMessage(true);
+    setTimeout(() => {
+      setShowD2SuccessMessage(false);
+    }, 2000);
+  }
+
+  // handle sorting
   const handleSort = (column) => {
     if (column === sortColumn) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -333,6 +375,7 @@ const Index = () => {
 
   const ClearAllSelected = () => {
     setSelectedIndices([]);
+    setUuidArray([])
     setSelectedData([]);
     setShowRemovedRowMessage(true);
     setTimeout(() => {
@@ -391,6 +434,7 @@ const Index = () => {
     console.log('-----------------------------');
     console.log('-----------------------------');
     setLoadingD2(true);
+    setUuidArray([]);
     try {
       // Using Promise.all to await all requests concurrently
       // console.log(apiUsername, apiPassword);
@@ -450,8 +494,8 @@ const Index = () => {
   return (
     <div className="wrapper">
       {loadingD2 && (
-      <RingLoader className='loader-D2' color={"#123abc"} size={100} />
-            )}
+        <RingLoader className='loader-D2' color={"#123abc"} size={100} />
+      )}
       <div className="page-wrapper" style={{ opacity: loadingD2 ? "0.1" : "" }}>
         {/* <h6>
           {' '}
@@ -659,10 +703,112 @@ const Index = () => {
             )}
           </div>
         </div>
+
+        {/* updated data table */}
+      {updatedData && updatedData.length > 0 && (
+        <div className="mt-4 updated-data-box">
+          {/* <h6><b>Ran by D2:</b></h6> */}
+          <button 
+            style={{ float: "right", border: "none" }} 
+            onClick={() => setUpdatedData([])}
+             className="remove-selected-data-button"
+            >
+              <FontAwesomeIcon
+                      icon={faTimes}
+                      title="Remove list"
+                    />
+                    </button>
+          <table className="updated-data-table">
+            <thead>
+              <tr>
+                <th>Project ({updatedData.length})</th>
+                <th>D2</th>
+                <th>Orders</th>
+                <th>New orders</th>
+                <th></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody className="selected-data-table-body">
+              {updatedData.map((data) => (
+                <tr key={data.data.uuid}>
+                  <td data-uuid={data.data.uuid}>{data.data.name}</td>
+                  <td
+                    title={
+                      data.data.D2 !== null
+                        ? formatDateTime(data.data.D2)
+                        : 'null'
+                    }
+                  >
+                    <FontAwesomeIcon icon={faCheck} />
+                  </td>
+                  <td>{data.data.num_orders}</td>
+                  <td>
+                    {data.data.D2 ? data.data.new_orders : data.data.num_orders}
+                  </td>
+                  <td>
+                    <button className="mr-2 table-button">Open in EBSS</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="mt-3">
+            <hr></hr>
+            <button
+              className="mr-2 button runD2"
+              disabled
+              title={
+                errorMessageRunD2Button
+                  ? 'Some choosen projects has already been run by D2'
+                  : 'Run D2'
+              }
+            >
+              Run D2
+            </button>
+            <button className="mr-2 button">Send to Engine</button>
+            <button
+              className="button"
+              disabled={errorMessageLivoniaButton}
+              title={
+                errorMessageLivoniaButton
+                  ? "At least one of your selected projects needs to be run by D2 in order to click 'Livonia'"
+                  : 'Livonia'
+              }
+            >
+              Livonia
+            </button>
+            {errorMessageLivoniaButton && (
+              <div>
+                <h6
+                  className="mt-2"
+                  style={{ color: 'black', fontSize: '0.9em' }}
+                >
+                  Livonia button: Not all projects has been run by D2
+                </h6>
+              </div>
+            )}
+            {errorMessageRunD2Button && (
+              <div>
+                <h6
+                  className="mt-2"
+                  style={{ color: 'black', fontSize: '0.9em' }}
+                >
+                  RunD2 button: Some choosen projects has already been run by D2
+                </h6>
+              </div>
+            )}
+            
+          </div>
+        </div>
+      )} 
+
+
       </div>
+
       {/* selected data table */}
-      {selectedData.length > 0 && (
-        <div className="mt-3 selected-data-box">
+      {selectedData && selectedData.length > 0 && (
+        <div className="mt-3 selected-data-box"  style={{ opacity: loadingD2 ? "0.1" : "" }}>
           <table className="selected-data-table">
             <thead>
               <tr>
@@ -766,6 +912,11 @@ const Index = () => {
         </div>
       )} 
 
+
+
+      
+
+
       {/* Showing alert message when removing and adding project to/from selected project list  */}
       {showAddedRowMessage && (
         <div
@@ -783,10 +934,14 @@ const Index = () => {
           Project removed
         </div>
       )}
-
-
-     
-     
+         {showD2SuccessMessage && (
+        <div
+          className="alert-message"
+          style={{ backgroundColor: '#C8FFAB', border: '0.5px solid green' }}
+        >
+          D2 has ran successfully:
+        </div>
+      )}
 
     </div>
   );
