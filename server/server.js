@@ -32,7 +32,7 @@ app.get("/api/neo_projects", (req, res) => {
 });
 
 
-// API endpoint to fetch net_catalogue_projects from MySQL
+// GET - API endpoint to fetch net_catalogue_projects from MySQL
 app.get("/api/net_catalogue_projects", (req, res) => {
   const query = "SELECT portaluuid, uuid FROM net_catalogue_projects";
   pool.query(query, (err, results) => {
@@ -46,7 +46,7 @@ app.get("/api/net_catalogue_projects", (req, res) => {
 });
 
 
-// API endpoint to update D2 and stauts in net_catalogue_projects
+// POST - API endpoint to update D2 and stauts in net_catalogue_projects
 app.post("/api/net_catalogue_projects", (req, res) => {
   const { project_id } = req.body;
   console.log("project_id:", project_id);

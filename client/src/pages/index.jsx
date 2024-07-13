@@ -98,6 +98,75 @@ const Index = () => {
     selectedData2
   ]);
 
+
+  
+  const runD2 = async () => {
+    console.log('-----------------------------');
+    console.log('-----------------------------');
+    console.log('D2 TRIGGERED');
+    console.log('-----------------------------');
+    console.log('-----------------------------');
+    setLoadingD2(true);
+    setUuidArray([]);
+    setUpdatedDataMessage([]);
+    try {
+      // Using Promise.all to await all requests concurrently
+      // console.log(apiUsername, apiPassword);
+      await Promise.all(
+        selectedData.map(async (data) => {
+          const job_uuid = data.data.uuid;
+          // console.log("job_uuid sent to Netlife API", job_uuid);
+
+          try {
+            const response = await axios.get(
+              `https://shop.expressbild.se/api/v1/jobs/${job_uuid}/subjects`,
+              {
+                auth: {
+                  username: apiUsername,
+                  password: apiPassword,
+                },
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+              }
+            );
+
+            const responseArray = response.data
+              .filter((d) => d.data_2 === '1')
+              .map((item) => ({
+                job_uuid: job_uuid,
+                data_2: item.data_2,
+                orderuuid: item.uuid,
+                subjectuuid: item.uuid,
+                deliveryname: item.delivery_1.name,
+                deliveryaddress: item.delivery_1.address,
+                deliverypostalcode: item.delivery_1.postal_code,
+                deliverycity: item.delivery_1.city,
+                useremail: item.delivery_1.email_address,
+                usermobile: item.delivery_1.mobile_phone,
+                socialnumber: item.pid_number,
+                subjectname: item.name,
+                team: item.group,
+                username: item.name,
+              }));
+            console.log("Netlife response array: ", responseArray, "Length array: ", responseArray.length);
+            if (responseArray.length > 0) {
+              fetchNeoProjectsForOrders(responseArray);
+            } else {
+              console.log("Error: Netlife response array length < 1 ", responseArray)
+            }
+           
+          } catch (error) {
+            console.log('Error fetching data from Netlife: ', error);
+          }
+        })
+      );
+    } catch (error) {
+      console.log('Error in runD2 function: ', error);
+      return [];
+    }
+  };
+
   // //fetch neo_projects and update responseArray
   // const fetchNeoProjectsForOrders = async (responseArray) => {
   //   try {
@@ -137,13 +206,12 @@ const fetchNeoProjectsForOrders = async (responseArray) => {
     try {
       const response = await axios.get(`${baseURL}/api/neo_projects`);
       const neoProjects = response.data;
+      console.log("Fetched Neo projects: ", neoProjects);
       
       const nonMatchingItems = [];
 
       responseArray.forEach((item) => {
-        const matchingProject = neoProjects.find(
-          (project) => project.uuid === item.job_uuid
-        );
+        const matchingProject = neoProjects.find((project) => project.uuid === item.job_uuid);
 
         if (!matchingProject) {
           nonMatchingItems.push(item);
@@ -156,7 +224,7 @@ const fetchNeoProjectsForOrders = async (responseArray) => {
         // Send non-matching items to fetchCatalogProjects
         fetchCatalogProjects(nonMatchingItems); 
       } else {
-        console.log('All items matched successfully');
+        console.log('All items matched, trigger uppdateNetCatalogueProjects');
         uppdateNetCatalogueProjects(responseArray)
       }
     } catch (error) {
@@ -165,7 +233,7 @@ const fetchNeoProjectsForOrders = async (responseArray) => {
   };
 
 
-  //fetch net_ataloue_projects and update responseArray
+  //fetch net_cataloue_projects and update responseArray
   const fetchCatalogProjects = async (responseArray) => {
     try {
       // Fetch net_catalogue_projects data
@@ -277,7 +345,8 @@ const fetchNeoProjectsForOrders = async (responseArray) => {
       );
   
       await Promise.all(updatePromises);
-  
+      // console.log("uppdateNetCatalogueProjects response: ", updatePromises);
+
       console.log("---");
       console.log("All projects updated successfully");
       console.log("---");
@@ -298,7 +367,7 @@ const fetchNeoProjectsForOrders = async (responseArray) => {
     setSelectedData([]);
     setSelectedIndices([]);
     // setCountry("")
-    setYear("")
+    // setYear("")
     setStatus("")
     setIsUnorderedList(true)
     setSearchString("")
@@ -481,70 +550,6 @@ const fetchNeoProjectsForOrders = async (responseArray) => {
     console.log(isUnorderedList);
   };
 
-  const runD2 = async () => {
-    console.log('-----------------------------');
-    console.log('-----------------------------');
-    console.log('D2 TRIGGERED');
-    console.log('-----------------------------');
-    console.log('-----------------------------');
-    setLoadingD2(true);
-    setUuidArray([]);
-    setUpdatedDataMessage([]);
-    try {
-      // Using Promise.all to await all requests concurrently
-      // console.log(apiUsername, apiPassword);
-      await Promise.all(
-        selectedData.map(async (data) => {
-          const job_uuid = data.data.uuid;
-          // console.log("job_uuid sent to Netlife API", job_uuid);
-
-          try {
-            const response = await axios.get(
-              `https://shop.expressbild.se/api/v1/jobs/${job_uuid}/subjects`,
-              {
-                auth: {
-                  username: apiUsername,
-                  password: apiPassword,
-                },
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-              }
-            );
-
-            const responseArray = response.data
-              .filter((d) => d.data_2 === '1')
-              .map((item) => ({
-                job_uuid: job_uuid,
-                data_2: item.data_2,
-                orderuuid: item.uuid,
-                subjectuuid: item.uuid,
-                deliveryname: item.delivery_1.name,
-                deliveryaddress: item.delivery_1.address,
-                deliverypostalcode: item.delivery_1.postal_code,
-                deliverycity: item.delivery_1.city,
-                useremail: item.delivery_1.email_address,
-                usermobile: item.delivery_1.mobile_phone,
-                socialnumber: item.pid_number,
-                subjectname: item.name,
-                team: item.group,
-                username: item.name,
-              }));
-            console.log("Netlife response array: ", responseArray);
-            if (responseArray.length > 0) {
-              fetchNeoProjectsForOrders(responseArray);
-            }
-           
-          } catch (error) {
-            console.log('Error fetching data from Netlife: ', error);
-          }
-        })
-      );
-    } catch (error) {
-      console.log('Error in runD2 function: ', error);
-      return [];
-    }
-  };
 
   return (
     <div className="wrapper">
