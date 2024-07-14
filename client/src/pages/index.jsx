@@ -11,10 +11,19 @@ import {
   faC,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { RingLoader } from 'react-spinners'; 
+import { RingLoader } from 'react-spinners';
 
-
-import { baseURL, apiUsername, apiPassword } from '../../../config/env.js';
+import {
+  baseURL,
+  apiUsername,
+  apiPassword,
+  apiUsernameSE,
+  apiUsernameFI,
+  apiUsernameNO,
+  apiUsernameDK,
+  apiUsernameDE,
+  apiPasswordGeneral,
+} from '../../../config/env.js';
 
 import clearFilter from '../assets/images/clear-filter.png';
 
@@ -39,7 +48,7 @@ const Index = () => {
   const [searchString, setSearchString] = useState('');
 
   const [sortColumn, setSortColumn] = useState('last_updated');
-  const [sortDirection, setSortDirection] = useState('desc'); 
+  const [sortDirection, setSortDirection] = useState('desc');
 
   const [showAddedRowMessage, setShowAddedRowMessage] = useState(false);
   const [showRemovedRowMessage, setShowRemovedRowMessage] = useState(false);
@@ -48,8 +57,6 @@ const Index = () => {
   const [errorMessageLivoniaButton, setErrorMessageLivoniaButton] =
     useState(false);
   const [errorMessageRunD2Button, setErrorMessageRunD2Button] = useState('');
-
-
 
   const fetchProjects = async () => {
     setLoading(true);
@@ -63,7 +70,7 @@ const Index = () => {
 
       //  // Map UUIDs to projects and include a data array
       //  const matchingProjects = uuidArray.map(uuid => {
-      //   const project = response.data.find(project => project.uuid === uuid) 
+      //   const project = response.data.find(project => project.uuid === uuid)
       //   return {
       //     data: {
       //       ...project,
@@ -89,17 +96,8 @@ const Index = () => {
 
   useEffect(() => {
     fetchProjects();
-  }, [
-    year,
-    country,
-    status,
-    searchString,
-    isUnorderedList,
-    selectedData2
-  ]);
+  }, [year, country, status, searchString, isUnorderedList, selectedData2]);
 
-
-  
   const runD2 = async () => {
     console.log('-----------------------------');
     console.log('-----------------------------');
@@ -111,51 +109,134 @@ const Index = () => {
     setUpdatedDataMessage([]);
     try {
       // Using Promise.all to await all requests concurrently
-      // console.log(apiUsername, apiPassword);
       await Promise.all(
         selectedData.map(async (data) => {
           const job_uuid = data.data.uuid;
-          // console.log("job_uuid sent to Netlife API", job_uuid);
+          // console.log(data.data.uuid)
+          // console.log(data.data.portaluuid)
+          // console.log(data.data)
+
+          let response; // Declare response variable here
 
           try {
-            const response = await axios.get(
-              `https://shop.expressbild.se/api/v1/jobs/${job_uuid}/subjects`,
-              {
-                auth: {
-                  username: apiUsername,
-                  password: apiPassword,
-                },
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-              }
-            );
-
-            const responseArray = response.data
-              .filter((d) => d.data_2 === '1')
-              .map((item) => ({
-                job_uuid: job_uuid,
-                data_2: item.data_2,
-                orderuuid: item.uuid,
-                subjectuuid: item.uuid,
-                deliveryname: item.delivery_1.name,
-                deliveryaddress: item.delivery_1.address,
-                deliverypostalcode: item.delivery_1.postal_code,
-                deliverycity: item.delivery_1.city,
-                useremail: item.delivery_1.email_address,
-                usermobile: item.delivery_1.mobile_phone,
-                socialnumber: item.pid_number,
-                subjectname: item.name,
-                team: item.group,
-                username: item.name,
-              }));
-            console.log("Netlife response array: ", responseArray, "Length array: ", responseArray.length);
-            if (responseArray.length > 0) {
-              fetchNeoProjectsForOrders(responseArray);
-            } else {
-              console.log("Error: Netlife response array length < 1 ", responseArray)
+            if (
+              data.data.portaluuid === '2dba368b-6205-11e1-b101-0025901d40ea'
+            ) {
+              // Sweden
+              response = await axios.get(
+                `https://shop.expressbild.se/api/v1/jobs/${job_uuid}/subjects`,
+                {
+                  auth: {
+                    username: apiUsername,
+                    password: apiPassword,
+                  },
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                }
+              );
+            } else if (
+              data.data.portaluuid === 'da399c45-3cf2-11ea-b287-ac1f6b419120'
+            ) {
+              // Norway
+              response = await axios.get(
+                `https://shop.fotoexpressen.no/api/v1/jobs/${job_uuid}/subjects`,
+                {
+                  auth: {
+                    username: apiUsernameNO,
+                    password: apiPasswordGeneral,
+                  },
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                }
+              );
+            } else if (
+              data.data.portaluuid === '8d944c93-9de4-11e2-882a-0025901d40ea'
+            ) {
+              // Denmark
+              response = await axios.get(
+                `https://shop.billedexpressen.dk/api/v1/jobs/${job_uuid}/subjects`,
+                {
+                  auth: {
+                    username: apiUsernameDK,
+                    password: apiPasswordGeneral,
+                  },
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                }
+              );
+            } else if (
+              data.data.portaluuid === '1cfa0ec6-d7de-11e1-b101-0025901d40ea'
+            ) {
+              // Finland
+              response = await axios.get(
+                `https://shop.expresskuva.fi/api/v1/jobs/${job_uuid}/subjects`,
+                {
+                  auth: {
+                    username: apiUsernameFI,
+                    password: apiPasswordGeneral,
+                  },
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                }
+              );
+            } else if (
+              data.data.portaluuid === 'da399c45-3cf2-11ea-b287-ac1f6b419120'
+            ) {
+              // Germany
+              response = await axios.get(
+                `https://shop.bildexpressen.de/api/v1/jobs/${job_uuid}/subjects`,
+                {
+                  auth: {
+                    username: apiUsernameDE,
+                    password: apiPasswordGeneral,
+                  },
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                }
+              );
             }
-           
+
+            if (response) {
+              const responseArray = response.data
+                .filter((d) => d.data_2 === '1')
+                .map((item) => ({
+                  job_uuid: job_uuid,
+                  data_2: item.data_2,
+                  orderuuid: item.uuid,
+                  subjectuuid: item.uuid,
+                  deliveryname: item.delivery_1.name,
+                  deliveryaddress: item.delivery_1.address,
+                  deliverypostalcode: item.delivery_1.postal_code,
+                  deliverycity: item.delivery_1.city,
+                  useremail: item.delivery_1.email_address,
+                  usermobile: item.delivery_1.mobile_phone,
+                  socialnumber: item.pid_number,
+                  subjectname: item.name,
+                  team: item.group,
+                  username: item.name,
+                }));
+              console.log(
+                'Netlife response array: ',
+                responseArray,
+                'Length array: ',
+                responseArray.length
+              );
+              if (responseArray.length > 0) {
+                await fetchNeoProjectsForOrders(responseArray);
+              } else {
+                console.log(
+                  'Error: Netlife response array length < 1 ',
+                  responseArray
+                );
+              }
+            } else {
+              console.log('No response received for job_uuid:', job_uuid);
+            }
           } catch (error) {
             console.log('Error fetching data from Netlife: ', error);
           }
@@ -167,71 +248,70 @@ const Index = () => {
     }
   };
 
-  // //fetch neo_projects and update responseArray
-  // const fetchNeoProjectsForOrders = async (responseArray) => {
-  //   try {
-  //     const response = await axios.get(`${baseURL}/api/neo_projects`);
-  //     // console.log('Fetched neo_projects:', response.data);
-  //     responseArray.forEach((item) => {
-  //       const matchingProject = response.data.find(
-  //         (project) => project.uuid === item.job_uuid
-  //       );
-  //       if (matchingProject) {
-  //         // console.log("MATCHED!!!")
-  //         item.projectname = matchingProject.name; // Add projectName
-  //         // Parse catalogues JSON string
-  //         try {
-  //           const catalogues = JSON.parse(matchingProject.catalogues);
-  //           item.catalogues = catalogues.map((catalogue) => ({
-  //             name: catalogue.name,
-  //             price: catalogue.price,
-  //             vatvalue: catalogue.price - catalogue.price * 0.9434,
-  //           }));
-  //         } catch (error) {
-  //           console.error('Error parsing catalogues JSON:', error);
-  //         }
-  //       } else {
-  //         console.log(`No match found for orderuuid: ${item.jobuuid}`);
-  //       }
-  //     });
-  //     fetchCatalogProjects(responseArray);
-  //     // console.log('Updated responseArray:', responseArray);
-  //   } catch (error) {
-  //     console.error('Error fetching neo_projects:', error);
-  //   }
-  // };
-
   //fetch neo_projects and update responseArray
-const fetchNeoProjectsForOrders = async (responseArray) => {
+  const fetchNeoProjectsForOrders = async (responseArray) => {
     try {
       const response = await axios.get(`${baseURL}/api/neo_projects`);
-      const neoProjects = response.data;
-      console.log("Fetched Neo projects: ", neoProjects);
-      
-      const nonMatchingItems = [];
-
+      // console.log('Fetched neo_projects:', response.data);
       responseArray.forEach((item) => {
-        const matchingProject = neoProjects.find((project) => project.uuid === item.job_uuid);
-
-        if (!matchingProject) {
-          nonMatchingItems.push(item);
+        const matchingProject = response.data.find(
+          (project) => project.uuid === item.job_uuid
+        );
+        if (matchingProject) {
+          // console.log("MATCHED!!!")
+          item.projectname = matchingProject.name; // Add projectName
+          // Parse catalogues JSON string
+          try {
+            const catalogues = JSON.parse(matchingProject.catalogues);
+            item.catalogues = catalogues.map((catalogue) => ({
+              name: catalogue.name,
+              price: catalogue.price,
+              vatvalue: catalogue.price - catalogue.price * 0.9434,
+            }));
+          } catch (error) {
+            console.error('Error parsing catalogues JSON:', error);
+          }
+        } else {
+          console.log(`No match found for orderuuid: ${item.jobuuid}`);
         }
       });
-
-      // Log or process non-matching items
-      if (nonMatchingItems.length > 0) {
-        console.log('Non-matching items:', nonMatchingItems);
-        // Send non-matching items to fetchCatalogProjects
-        fetchCatalogProjects(nonMatchingItems); 
-      } else {
-        console.log('All items matched, trigger uppdateNetCatalogueProjects');
-        uppdateNetCatalogueProjects(responseArray)
-      }
+      fetchCatalogProjects(responseArray);
+      // console.log('Updated responseArray:', responseArray);
     } catch (error) {
       console.error('Error fetching neo_projects:', error);
     }
   };
 
+  //   //fetch neo_projects and update responseArray
+  // const fetchNeoProjectsForOrders = async (responseArray) => {
+  //     try {
+  //       const response = await axios.get(`${baseURL}/api/neo_projects`);
+  //       const neoProjects = response.data;
+  //       console.log("Fetched Neo projects: ", neoProjects);
+
+  //       const nonMatchingItems = [];
+
+  //       responseArray.forEach((item) => {
+  //         const matchingProject = neoProjects.find((project) => project.uuid === item.job_uuid);
+
+  //         if (!matchingProject) {
+  //           nonMatchingItems.push(item);
+  //         }
+  //       });
+
+  //       // Log or process non-matching items
+  //       if (nonMatchingItems.length > 0) {
+  //         console.log('Non-matching items:', nonMatchingItems);
+  //         // Send non-matching items to fetchCatalogProjects
+  //         fetchCatalogProjects(nonMatchingItems);
+  //       } else {
+  //         console.log('All items matched, trigger uppdateNetCatalogueProjects');
+  //         uppdateNetCatalogueProjects(responseArray)
+  //       }
+  //     } catch (error) {
+  //       console.error('Error fetching neo_projects:', error);
+  //     }
+  //   };
 
   //fetch net_cataloue_projects and update responseArray
   const fetchCatalogProjects = async (responseArray) => {
@@ -247,7 +327,6 @@ const fetchNeoProjectsForOrders = async (responseArray) => {
           (project) => project.uuid === item.job_uuid
         );
         if (matchingProject) {
-          // console.log("MATCHED!!!");
           item.portaluuid = matchingProject.portaluuid;
           item.project_id = matchingProject.uuid;
         } else {
@@ -276,15 +355,26 @@ const fetchNeoProjectsForOrders = async (responseArray) => {
     }
   };
 
-  //add tuppel to net_catalogue_orders
+  // Function to add tuples to net_catalogue_orders
   const addTuppleToNetCatalogueOrders = async (responseArray) => {
     const batchSize = 100;
 
     try {
+      // Fetch existing subjectUUIDs
+      const existingSubjectUUIDs =
+        await fetchExistingSubjectUUIDs(responseArray);
+      console.log('existingSubjectUUIDs: ', existingSubjectUUIDs);
+
+      // Filter responseArray for items with subjectUUIDs not in existingSubjectUUIDs
+      const newOrders = responseArray.filter(
+        (item) => !existingSubjectUUIDs.includes(item.subjectuuid)
+      );
+      console.log('New orders: ', newOrders);
+
       let startIndex = 0;
 
-      while (startIndex < responseArray.length) {
-        const batch = responseArray.slice(startIndex, startIndex + batchSize);
+      while (startIndex < newOrders.length) {
+        const batch = newOrders.slice(startIndex, startIndex + batchSize);
 
         const responseAddTuppel = await axios.post(
           `${baseURL}/api/net_catalogue_orders`,
@@ -292,42 +382,121 @@ const fetchNeoProjectsForOrders = async (responseArray) => {
         );
 
         const insertedOrders = responseAddTuppel.data.insertedOrders;
-        const message = responseAddTuppel.data.message
-        const insertedOrdersAmount = responseAddTuppel.data.insertedOrders.length
+        const message = responseAddTuppel.data.message;
+        const insertedOrdersAmount =
+          responseAddTuppel.data.insertedOrders.length;
 
-        console.log(responseAddTuppel)
-        // console.log(responseAddTuppel.data.insertedOrders[0].job_uuid)
-        console.log(responseAddTuppel.data.message)
-        console.log(responseAddTuppel.data.insertedOrders.length)
-        // setUpdatedDataMessage(responseAddTuppel.data.insertedOrders.lengt)
+        console.log(responseAddTuppel);
+        console.log(responseAddTuppel.data.message);
+        console.log(responseAddTuppel.data.insertedOrders.length);
 
-      if (responseAddTuppel.data && responseAddTuppel.data.insertedOrders) {
-        // Create an object with job_uuid and message
-        const messageObject = {
-          job_uuid: insertedOrders[0].job_uuid,
-          message: message,
-          insertedOrdersAmount: insertedOrdersAmount,
-          selectedData: selectedData.find(data => data.data.uuid === responseAddTuppel.data.insertedOrders[0].job_uuid) || {}
-        };
-        setUpdatedDataMessage(prevState => [...prevState, messageObject]);
-        console.log(
-          `Successfully sent batch of ${batch.length} and ${responseAddTuppel.data.insertedOrders.length} tuples were inserted`,
-          responseAddTuppel
-        );
-      } else {
-        console.log(
-          `Successfully sent batch of ${batch.length} but no information about inserted orders was provided`,
-          responseAddTuppel
-        );
-      }
+        if (responseAddTuppel.data && responseAddTuppel.data.insertedOrders) {
+          // Create an object with job_uuid and message
+          const messageObject = {
+            job_uuid: insertedOrders[0].job_uuid,
+            message: message,
+            insertedOrdersAmount: insertedOrdersAmount,
+            selectedData:
+              selectedData.find(
+                (data) =>
+                  data.data.uuid ===
+                  responseAddTuppel.data.insertedOrders[0].job_uuid
+              ) || {},
+          };
+          setUpdatedDataMessage((prevState) => [...prevState, messageObject]);
+          console.log(
+            `Successfully sent batch of ${batch.length} and ${responseAddTuppel.data.insertedOrders.length} tuples were inserted`,
+            responseAddTuppel
+          );
+        } else {
+          console.log(
+            `Successfully sent batch of ${batch.length} but no information about inserted orders was provided`,
+            responseAddTuppel
+          );
+        }
         startIndex += batchSize;
       }
 
       uppdateNetCatalogueProjects(responseArray);
       console.log('All tuples added successfully!');
-      console.log("---");
+      console.log('---');
     } catch (error) {
       console.error('Error adding tuples to net_catalogue_order', error);
+    }
+  };
+
+  // //add tuppel to net_catalogue_orders
+  // const addTuppleToNetCatalogueOrders = async (responseArray) => {
+  //   const batchSize = 100;
+
+  //   try {
+  //     let startIndex = 0;
+
+  //     while (startIndex < responseArray.length) {
+  //       const batch = responseArray.slice(startIndex, startIndex + batchSize);
+
+  //       const responseAddTuppel = await axios.post(
+  //         `${baseURL}/api/net_catalogue_orders`,
+  //         batch
+  //       );
+
+  //       const insertedOrders = responseAddTuppel.data.insertedOrders;
+  //       const message = responseAddTuppel.data.message
+  //       const insertedOrdersAmount = responseAddTuppel.data.insertedOrders.length
+
+  //       console.log(responseAddTuppel)
+  //       // console.log(responseAddTuppel.data.insertedOrders[0].job_uuid)
+  //       console.log(responseAddTuppel.data.message)
+  //       console.log(responseAddTuppel.data.insertedOrders.length)
+  //       // setUpdatedDataMessage(responseAddTuppel.data.insertedOrders.lengt)
+
+  //     if (responseAddTuppel.data && responseAddTuppel.data.insertedOrders) {
+  //       // Create an object with job_uuid and message
+  //       const messageObject = {
+  //         job_uuid: insertedOrders[0].job_uuid,
+  //         message: message,
+  //         insertedOrdersAmount: insertedOrdersAmount,
+  //         selectedData: selectedData.find(data => data.data.uuid === responseAddTuppel.data.insertedOrders[0].job_uuid) || {}
+  //       };
+  //       setUpdatedDataMessage(prevState => [...prevState, messageObject]);
+  //       console.log(
+  //         `Successfully sent batch of ${batch.length} and ${responseAddTuppel.data.insertedOrders.length} tuples were inserted`,
+  //         responseAddTuppel
+  //       );
+  //     } else {
+  //       console.log(
+  //         `Successfully sent batch of ${batch.length} but no information about inserted orders was provided`,
+  //         responseAddTuppel
+  //       );
+  //     }
+  //       startIndex += batchSize;
+  //     }
+
+  //     uppdateNetCatalogueProjects(responseArray);
+  //     console.log('All tuples added successfully!');
+  //     console.log("---");
+  //   } catch (error) {
+  //     console.error('Error adding tuples to net_catalogue_order', error);
+  //   }
+  // };
+
+  // Function to fetch existing subjectUUIDs from net_catalogue_orders
+  const fetchExistingSubjectUUIDs = async (responseArray) => {
+    try {
+      console.log(responseArray[0].project_id)
+      const response = await axios.get(
+        `${baseURL}/api/net_catalogue_orders/subjectuuid`,
+        {
+          params: {
+            project_id: responseArray[0].project_id,
+          },
+        }
+      );
+      console.log('SubjectUUIDs response array: ', response);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching existing subjectUUIDs:', error);
+      return [];
     }
   };
 
@@ -343,18 +512,17 @@ const fetchNeoProjectsForOrders = async (responseArray) => {
           project_id: item.job_uuid,
         })
       );
-  
+
       await Promise.all(updatePromises);
       // console.log("uppdateNetCatalogueProjects response: ", updatePromises);
 
-      console.log("---");
-      console.log("All projects updated successfully");
-      console.log("---");
+      console.log('---');
+      console.log('All projects updated successfully');
+      console.log('---');
       // const uuidArray = selectedData.map(item => item.data.uuid);
       // console.log('UUID Array:', uuidArray);
       // setUuidArray(uuidArray);
       finishD2();
-    
     } catch (error) {
       console.error('Error updating net_catalogue_projects', error);
       setLoadingD2(false);
@@ -368,9 +536,9 @@ const fetchNeoProjectsForOrders = async (responseArray) => {
     setSelectedIndices([]);
     // setCountry("")
     // setYear("")
-    setStatus("")
-    setIsUnorderedList(true)
-    setSearchString("")
+    setStatus('');
+    setIsUnorderedList(true);
+    setSearchString('');
     setLoadingD2(false);
 
     setShowD2SuccessMessage(true);
@@ -378,8 +546,8 @@ const fetchNeoProjectsForOrders = async (responseArray) => {
       setShowD2SuccessMessage(false);
     }, 2000);
 
-    console.log(updatedDataMessage)
-  }
+    console.log(updatedDataMessage);
+  };
 
   // handle sorting
   const handleSort = (column) => {
@@ -475,15 +643,14 @@ const fetchNeoProjectsForOrders = async (responseArray) => {
           setShowAddedRowMessage(false);
         }, 500);
         // Add data if index is newly selected
-        console.log("selected data", selectedData)
+        console.log('selected data', selectedData);
         return [...prevSelectedData, { index, data }];
       }
     });
     console.log(selectedData);
   };
 
-
-  //foramt time 
+  //foramt time
   const formatDateTime = (dateTimeString) => {
     const date = new Date(dateTimeString);
     const year = date.getFullYear();
@@ -497,7 +664,7 @@ const fetchNeoProjectsForOrders = async (responseArray) => {
 
   const ClearAllSelected = () => {
     setSelectedIndices([]);
-    setUuidArray([])
+    setUuidArray([]);
     setSelectedData([]);
     setUpdatedDataMessage([]);
     setShowRemovedRowMessage(true);
@@ -550,13 +717,12 @@ const fetchNeoProjectsForOrders = async (responseArray) => {
     console.log(isUnorderedList);
   };
 
-
   return (
     <div className="wrapper">
       {loadingD2 && (
-        <RingLoader className='loader-D2' color={"#123abc"} size={100} />
+        <RingLoader className="loader-D2" color={'#123abc'} size={100} />
       )}
-      <div className="page-wrapper" style={{ opacity: loadingD2 ? "0.1" : "" }}>
+      <div className="page-wrapper" style={{ opacity: loadingD2 ? '0.1' : '' }}>
         {/* <h6>
           {' '}
           <b>Catalog control</b>
@@ -593,7 +759,7 @@ const fetchNeoProjectsForOrders = async (responseArray) => {
               <option value="2dba368b-6205-11e1-b101-0025901d40ea">
                 Sweden
               </option>
-              <option value="da399c45-3cf2-11ea-b287-ac1f6b419120">
+              <option value="f41d5c48-5af3-94db-f32d-3a51656b2c53">
                 Norway
               </option>
               <option value="8d944c93-9de4-11e2-882a-0025901d40ea">
@@ -724,9 +890,7 @@ const fetchNeoProjectsForOrders = async (responseArray) => {
                       )}
                     </td>
                     <td>{p.num_orders}</td>
-                    <td>
-                      {p.D2 ? p.new_orders : p.num_orders}
-                    </td>
+                    <td>{p.D2 ? p.new_orders : p.num_orders}</td>
                     <td>
                       {p.production_type !== null ? p.production_type : '---'}
                     </td>
@@ -765,125 +929,125 @@ const fetchNeoProjectsForOrders = async (responseArray) => {
         </div>
 
         {/* updated data table */}
-      {updatedDataMessage && updatedDataMessage.length > 0 && (
-        <div className="mt-4 updated-data-box">
-          {/* <h6><b>Ran by D2:</b></h6> */}
-          {/* <h6><b>{updatedDataMessage}</b></h6> */}
-          {/* {updatedDataMessage.map((data) => (
+        {updatedDataMessage && updatedDataMessage.length > 0 && (
+          <div className="mt-4 updated-data-box">
+            {/* <h6><b>Ran by D2:</b></h6> */}
+            {/* <h6><b>{updatedDataMessage}</b></h6> */}
+            {/* {updatedDataMessage.map((data) => (
             <div>
               <h6>{data.insertedOrdersAmount}</h6>
               <h6>{data.message}</h6>
               <h6>{data.job_uuid}</h6>
             </div>
           ))} */}
-          <button 
-            style={{ float: "right", border: "none" }} 
-            onClick={() => setUpdatedData([])}
-             className="remove-selected-data-button"
+            <button
+              style={{ float: 'right', border: 'none' }}
+              onClick={() => setUpdatedData([])}
+              className="remove-selected-data-button"
             >
-              <FontAwesomeIcon
-                      icon={faTimes}
-                      title="Remove list"
-                    />
-                    </button>
-          <table className="updated-data-table">
-            <thead>
-              <tr>
-                <th>Project ({updatedDataMessage.length})</th>
-                <th>D2</th>
-                <th>Orders</th>
-                <th>New orders</th>
-                <th></th>
-                <th>Inserted</th>
-                <th>Msg</th>
-              </tr>
-            </thead>
-            <tbody className="selected-data-table-body">
-              {updatedDataMessage.map((data) => (
-                <tr key={data.selectedData.data.uuid}>
-                  <td data-uuid={data.selectedData.data.uuid}>{data.selectedData.data.name}</td>
-                  <td
-                    title={
-                      data.selectedData.data.D2 !== null
-                        ? formatDateTime(data.selectedData.data.D2)
-                        : 'null'
-                    }
-                  >
-                    <FontAwesomeIcon icon={faCheck} />
-                  </td>
-                  <td>{data.selectedData.data.num_orders}</td>
-                  <td>
-                    {data.selectedData.data.D2 ? data.selectedData.data.new_orders : data.selectedData.data.num_orders}
-                  </td>
-                  <td>
-                    <button className="mr-2 table-button">Open in EBSS</button>
-                  </td>
-                  <td>
-                    {data.insertedOrdersAmount}
-                  </td>
-                  <td>
-                    {data.message}
-                  </td>
+              <FontAwesomeIcon icon={faTimes} title="Remove list" />
+            </button>
+            <table className="updated-data-table">
+              <thead>
+                <tr>
+                  <th>Project ({updatedDataMessage.length})</th>
+                  <th>D2</th>
+                  <th>Orders</th>
+                  <th>New orders</th>
+                  <th></th>
+                  <th>Inserted</th>
+                  <th>Msg</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="mt-3">
-            <hr></hr>
-            <button
-              className="mr-2 button runD2"
-              disabled
-              title={
-                errorMessageRunD2Button
-                  ? 'Some choosen projects has already been run by D2'
-                  : 'Run D2'
-              }
-            >
-              Run D2
-            </button>
-            <button className="mr-2 button">Send to Engine</button>
-            <button
-              className="button"
-              disabled={errorMessageLivoniaButton}
-              title={
-                errorMessageLivoniaButton
-                  ? "At least one of your selected projects needs to be run by D2 in order to click 'Livonia'"
-                  : 'Livonia'
-              }
-            >
-              Livonia
-            </button>
-            {errorMessageLivoniaButton && (
-              <div>
-                <h6
-                  className="mt-2"
-                  style={{ color: 'black', fontSize: '0.9em' }}
-                >
-                  Livonia button: Not all projects has been run by D2
-                </h6>
-              </div>
-            )}
-            {errorMessageRunD2Button && (
-              <div>
-                <h6
-                  className="mt-2"
-                  style={{ color: 'black', fontSize: '0.9em' }}
-                >
-                  RunD2 button: Some choosen projects has already been run by D2
-                </h6>
-              </div>
-            )}
-            
+              </thead>
+              <tbody className="selected-data-table-body">
+                {updatedDataMessage.map((data) => (
+                  <tr key={data.selectedData.data.uuid}>
+                    <td data-uuid={data.selectedData.data.uuid}>
+                      {data.selectedData.data.name}
+                    </td>
+                    <td
+                      title={
+                        data.selectedData.data.D2 !== null
+                          ? formatDateTime(data.selectedData.data.D2)
+                          : 'null'
+                      }
+                    >
+                      <FontAwesomeIcon icon={faCheck} />
+                    </td>
+                    <td>{data.selectedData.data.num_orders}</td>
+                    <td>
+                      {data.selectedData.data.D2
+                        ? data.selectedData.data.new_orders
+                        : data.selectedData.data.num_orders}
+                    </td>
+                    <td>
+                      <button className="mr-2 table-button">
+                        Open in EBSS
+                      </button>
+                    </td>
+                    <td>{data.insertedOrdersAmount}</td>
+                    <td>{data.message}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="mt-3">
+              <hr></hr>
+              <button
+                className="mr-2 button runD2"
+                disabled
+                title={
+                  errorMessageRunD2Button
+                    ? 'Some choosen projects has already been run by D2'
+                    : 'Run D2'
+                }
+              >
+                Run D2
+              </button>
+              <button className="mr-2 button">Send to Engine</button>
+              <button
+                className="button"
+                disabled={errorMessageLivoniaButton}
+                title={
+                  errorMessageLivoniaButton
+                    ? "At least one of your selected projects needs to be run by D2 in order to click 'Livonia'"
+                    : 'Livonia'
+                }
+              >
+                Livonia
+              </button>
+              {errorMessageLivoniaButton && (
+                <div>
+                  <h6
+                    className="mt-2"
+                    style={{ color: 'black', fontSize: '0.9em' }}
+                  >
+                    Livonia button: Not all projects has been run by D2
+                  </h6>
+                </div>
+              )}
+              {errorMessageRunD2Button && (
+                <div>
+                  <h6
+                    className="mt-2"
+                    style={{ color: 'black', fontSize: '0.9em' }}
+                  >
+                    RunD2 button: Some choosen projects has already been run by
+                    D2
+                  </h6>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )} 
-
-
+        )}
       </div>
 
       {/* selected data table */}
       {selectedData && selectedData.length > 0 && (
-        <div className="mt-3 selected-data-box"  style={{ opacity: loadingD2 ? "0.1" : "" }}>
+        <div
+          className="mt-3 selected-data-box"
+          style={{ opacity: loadingD2 ? '0.1' : '' }}
+        >
           <table className="selected-data-table">
             <thead>
               <tr>
@@ -982,15 +1146,9 @@ const fetchNeoProjectsForOrders = async (responseArray) => {
                 </h6>
               </div>
             )}
-            
           </div>
         </div>
-      )} 
-
-
-
-      
-
+      )}
 
       {/* Showing alert message when removing and adding project to/from selected project list  */}
       {showAddedRowMessage && (
@@ -1009,7 +1167,7 @@ const fetchNeoProjectsForOrders = async (responseArray) => {
           Project removed
         </div>
       )}
-         {showD2SuccessMessage && (
+      {showD2SuccessMessage && (
         <div
           className="alert-message"
           style={{ backgroundColor: '#C8FFAB', border: '0.5px solid green' }}
@@ -1017,7 +1175,6 @@ const fetchNeoProjectsForOrders = async (responseArray) => {
           D2 has ran successfully:
         </div>
       )}
-
     </div>
   );
 };
