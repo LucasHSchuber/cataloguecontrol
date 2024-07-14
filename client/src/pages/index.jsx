@@ -136,7 +136,7 @@ const Index = () => {
                 }
               );
             } else if (
-              data.data.portaluuid === 'da399c45-3cf2-11ea-b287-ac1f6b419120'
+              data.data.portaluuid === 'f41d5c48-5af3-94db-f32d-3a51656b2c53'
             ) {
               // Norway
               response = await axios.get(
@@ -235,7 +235,11 @@ const Index = () => {
                 );
               }
             } else {
+              console.log('No response: ', response);
               console.log('No response received for job_uuid:', job_uuid);
+              // uppdateNetCatalogueProjects(responseArray)
+
+              setLoadingD2(false)
             }
           } catch (error) {
             console.log('Error fetching data from Netlife: ', error);
@@ -372,56 +376,60 @@ const Index = () => {
       console.log('New orders: ', newOrders);
 
       let startIndex = 0;
+      if (newOrders.length > 0) {
+        while (startIndex < newOrders.length) {
+          const batch = newOrders.slice(startIndex, startIndex + batchSize);
 
-      while (startIndex < newOrders.length) {
-        const batch = newOrders.slice(startIndex, startIndex + batchSize);
-
-        const responseAddTuppel = await axios.post(
-          `${baseURL}/api/net_catalogue_orders`,
-          batch
-        );
-
-        const insertedOrders = responseAddTuppel.data.insertedOrders;
-        const message = responseAddTuppel.data.message;
-        const insertedOrdersAmount =
-          responseAddTuppel.data.insertedOrders.length;
-
-        console.log(responseAddTuppel);
-        console.log(responseAddTuppel.data.message);
-        console.log(responseAddTuppel.data.insertedOrders.length);
-
-        if (responseAddTuppel.data && responseAddTuppel.data.insertedOrders) {
-          // Create an object with job_uuid and message
-          const messageObject = {
-            job_uuid: insertedOrders[0].job_uuid,
-            message: message,
-            insertedOrdersAmount: insertedOrdersAmount,
-            selectedData:
-              selectedData.find(
-                (data) =>
-                  data.data.uuid ===
-                  responseAddTuppel.data.insertedOrders[0].job_uuid
-              ) || {},
-          };
-          setUpdatedDataMessage((prevState) => [...prevState, messageObject]);
-          console.log(
-            `Successfully sent batch of ${batch.length} and ${responseAddTuppel.data.insertedOrders.length} tuples were inserted`,
-            responseAddTuppel
+          const responseAddTuppel = await axios.post(
+            `${baseURL}/api/net_catalogue_orders`,
+            batch
           );
-        } else {
-          console.log(
-            `Successfully sent batch of ${batch.length} but no information about inserted orders was provided`,
-            responseAddTuppel
-          );
+
+          const insertedOrders = responseAddTuppel.data.insertedOrders;
+          const message = responseAddTuppel.data.message;
+          const insertedOrdersAmount =
+            responseAddTuppel.data.insertedOrders.length;
+
+          console.log(responseAddTuppel);
+          console.log(responseAddTuppel.data.message);
+          console.log(responseAddTuppel.data.insertedOrders.length);
+
+          if (insertedOrders.length > 0) {
+            // Create an object with job_uuid and message
+            const messageObject = {
+              job_uuid: insertedOrders[0].job_uuid,
+              message: message,
+              insertedOrdersAmount: insertedOrdersAmount,
+              selectedData:
+                selectedData.find(
+                  (data) =>
+                    data.data.uuid ===
+                    responseAddTuppel.data.insertedOrders[0].job_uuid
+                ) || {},
+            };
+            setUpdatedDataMessage((prevState) => [...prevState, messageObject]);
+            console.log(
+              `Successfully sent batch of ${batch.length} and ${responseAddTuppel.data.insertedOrders.length} tuples were inserted`,
+              responseAddTuppel
+            );
+          } else {
+            console.log(
+              `Successfully sent batch of ${batch.length} but no information about inserted orders was provided`,
+              responseAddTuppel
+            );
+          }
+          startIndex += batchSize;
         }
-        startIndex += batchSize;
+      } else {
+        console.log("Neworders.length is 0, no new orders to insert");
+        // uppdateNetCatalogueProjects(responseArray)
       }
-
       uppdateNetCatalogueProjects(responseArray);
       console.log('All tuples added successfully!');
       console.log('---');
     } catch (error) {
       console.error('Error adding tuples to net_catalogue_order', error);
+      setLoadingD2(false);
     }
   };
 
@@ -942,7 +950,7 @@ const Index = () => {
           ))} */}
             <button
               style={{ float: 'right', border: 'none' }}
-              onClick={() => setUpdatedData([])}
+              onClick={() => setUpdatedDataMessage([])}
               className="remove-selected-data-button"
             >
               <FontAwesomeIcon icon={faTimes} title="Remove list" />
@@ -986,7 +994,7 @@ const Index = () => {
                       </button>
                     </td>
                     <td>{data.insertedOrdersAmount}</td>
-                    <td>{data.message}</td>
+                    <td>{data.insertedOrdersAmount} {data.message}</td>
                   </tr>
                 ))}
               </tbody>
