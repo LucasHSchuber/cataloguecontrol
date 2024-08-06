@@ -30,10 +30,10 @@ import clearFilter from '../assets/images/clear-filter.png';
 const Index = () => {
   // Define state to store fetched data
   const [projects, setProjects] = useState([]);
-
+  
   const [loading, setLoading] = useState(false);
   const [loadingD2, setLoadingD2] = useState(false);
-
+  
   const [selectedIndices, setSelectedIndices] = useState([]);
   const [selectedData, setSelectedData] = useState([]);
   const [selectedData2, setSelectedData2] = useState([]);
@@ -116,7 +116,7 @@ const Index = () => {
           // console.log(data.data.portaluuid)
           // console.log(data.data)
 
-          let response; // Declare response variable here
+          let response; 
 
           try {
             if (
@@ -366,8 +366,8 @@ const Index = () => {
     try {
       // Fetch existing subjectUUIDs
       const existingSubjectUUIDs =
-        await fetchExistingSubjectUUIDs(responseArray);
-      console.log('existingSubjectUUIDs: ', existingSubjectUUIDs);
+        await fetchExistingProjects(responseArray);
+      console.log('fetchExistingProjects: ', existingSubjectUUIDs);
 
       // Filter responseArray for items with subjectUUIDs not in existingSubjectUUIDs
       const newOrders = responseArray.filter(
@@ -489,7 +489,7 @@ const Index = () => {
   // };
 
   // Function to fetch existing subjectUUIDs from net_catalogue_orders
-  const fetchExistingSubjectUUIDs = async (responseArray) => {
+  const fetchExistingProjects = async (responseArray) => {
     try {
       console.log(responseArray[0].project_id)
       const response = await axios.get(
@@ -500,10 +500,10 @@ const Index = () => {
           },
         }
       );
-      console.log('SubjectUUIDs response array: ', response);
+      console.log('fetchExistingProjects response array: ', response);
       return response.data;
     } catch (error) {
-      console.error('Error fetching existing subjectUUIDs:', error);
+      console.error('Error fetching existing projects:', error);
       return [];
     }
   };
