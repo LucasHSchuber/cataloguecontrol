@@ -49,7 +49,7 @@ app.get("/api/net_catalogue_projects", (req, res) => {
 // POST - API endpoint to update D2 and stauts in net_catalogue_projects
 app.post("/api/net_catalogue_projects", (req, res) => {
   const { project_id } = req.body;
-  console.log("project_id:", project_id);
+  // console.log("project_id:", project_id);
   if (!project_id) {
     return res.status(400).send("Missing project_id in request body");
   }
@@ -60,6 +60,7 @@ app.post("/api/net_catalogue_projects", (req, res) => {
       console.error("Error updating net_catalogue_projects:", err);
       res.status(500).send("Error updating net_catalogue_projects");
     } else {
+      console.log("Updating net_catalouge_projects D2 and status field");
       res.status(200).json({ message: "Record updated successfully", affectedRows: results.affectedRows });
     }
   });

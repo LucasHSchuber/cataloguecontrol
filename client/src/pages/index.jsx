@@ -33,6 +33,8 @@ const Index = () => {
   
   const [loading, setLoading] = useState(false);
   const [loadingD2, setLoadingD2] = useState(false);
+
+  const [processedCount, setProcessedCount] = useState(0);
   
   const [selectedIndices, setSelectedIndices] = useState([]);
   const [selectedData, setSelectedData] = useState([]);
@@ -286,36 +288,6 @@ const Index = () => {
     }
   };
 
-  //   //fetch neo_projects and update responseArray
-  // const fetchNeoProjectsForOrders = async (responseArray) => {
-  //     try {
-  //       const response = await axios.get(`${baseURL}/api/neo_projects`);
-  //       const neoProjects = response.data;
-  //       console.log("Fetched Neo projects: ", neoProjects);
-
-  //       const nonMatchingItems = [];
-
-  //       responseArray.forEach((item) => {
-  //         const matchingProject = neoProjects.find((project) => project.uuid === item.job_uuid);
-
-  //         if (!matchingProject) {
-  //           nonMatchingItems.push(item);
-  //         }
-  //       });
-
-  //       // Log or process non-matching items
-  //       if (nonMatchingItems.length > 0) {
-  //         console.log('Non-matching items:', nonMatchingItems);
-  //         // Send non-matching items to fetchCatalogProjects
-  //         fetchCatalogProjects(nonMatchingItems);
-  //       } else {
-  //         console.log('All items matched, trigger uppdateNetCatalogueProjects');
-  //         uppdateNetCatalogueProjects(responseArray)
-  //       }
-  //     } catch (error) {
-  //       console.error('Error fetching neo_projects:', error);
-  //     }
-  //   };
 
   //fetch net_cataloue_projects and update responseArray
   const fetchCatalogProjects = async (responseArray) => {
@@ -365,15 +337,14 @@ const Index = () => {
 
     try {
       // Fetch existing subjectUUIDs
-      const existingSubjectUUIDs =
-        await fetchExistingProjects(responseArray);
+      const existingSubjectUUIDs = await fetchExistingProjects(responseArray);
       console.log('fetchExistingProjects: ', existingSubjectUUIDs);
 
       // Filter responseArray for items with subjectUUIDs not in existingSubjectUUIDs
       const newOrders = responseArray.filter(
         (item) => !existingSubjectUUIDs.includes(item.subjectuuid)
       );
-      console.log('New orders: ', newOrders);
+      console.log('New orders: ', newOrders, "New orders length:", newOrders.length);
 
       let startIndex = 0;
       if (newOrders.length > 0) {
@@ -385,14 +356,19 @@ const Index = () => {
             batch
           );
 
-          const insertedOrders = responseAddTuppel.data.insertedOrders;
-          const message = responseAddTuppel.data.message;
-          const insertedOrdersAmount =
-            responseAddTuppel.data.insertedOrders.length;
+          // const insertedOrders = responseAddTuppel.data.insertedOrders;
+          // const message = responseAddTuppel.data.message;
+          // const insertedOrdersAmount = responseAddTuppel.data.insertedOrders.length;
 
           console.log(responseAddTuppel);
+          const insertedOrders = responseAddTuppel.data?.insertedOrders || [];
+          const message = responseAddTuppel.data?.message || '';
+          const insertedOrdersAmount = insertedOrders.length || 0;
+
+          console.log(insertedOrders.length); 
+          console.log(responseAddTuppel);
           console.log(responseAddTuppel.data.message);
-          console.log(responseAddTuppel.data.insertedOrders.length);
+          // console.log(responseAddTuppel.data.insertedOrders.length);
 
           if (insertedOrders.length > 0) {
             // Create an object with job_uuid and message
@@ -407,12 +383,26 @@ const Index = () => {
                     responseAddTuppel.data.insertedOrders[0].job_uuid
                 ) || {},
             };
+            console.log(messageObject);
             setUpdatedDataMessage((prevState) => [...prevState, messageObject]);
             console.log(
               `Successfully sent batch of ${batch.length} and ${responseAddTuppel.data.insertedOrders.length} tuples were inserted`,
               responseAddTuppel
             );
           } else {
+            const messageObject = {
+              job_uuid: newOrders[0].job_uuid,
+              message: message,
+              insertedOrdersAmount: 0,
+              selectedData:
+                selectedData.find(
+                  (data) =>
+                    data.data.uuid ===
+                    newOrders[0].job_uuid
+                ) || {},
+            };
+            console.log(messageObject);
+            setUpdatedDataMessage((prevState) => [...prevState, messageObject]);
             console.log(
               `Successfully sent batch of ${batch.length} but no information about inserted orders was provided`,
               responseAddTuppel
@@ -429,69 +419,15 @@ const Index = () => {
       console.log('---');
     } catch (error) {
       console.error('Error adding tuples to net_catalogue_order', error);
-      setLoadingD2(false);
+      // setLoadingD2(false);
     }
   };
 
-  // //add tuppel to net_catalogue_orders
-  // const addTuppleToNetCatalogueOrders = async (responseArray) => {
-  //   const batchSize = 100;
-
-  //   try {
-  //     let startIndex = 0;
-
-  //     while (startIndex < responseArray.length) {
-  //       const batch = responseArray.slice(startIndex, startIndex + batchSize);
-
-  //       const responseAddTuppel = await axios.post(
-  //         `${baseURL}/api/net_catalogue_orders`,
-  //         batch
-  //       );
-
-  //       const insertedOrders = responseAddTuppel.data.insertedOrders;
-  //       const message = responseAddTuppel.data.message
-  //       const insertedOrdersAmount = responseAddTuppel.data.insertedOrders.length
-
-  //       console.log(responseAddTuppel)
-  //       // console.log(responseAddTuppel.data.insertedOrders[0].job_uuid)
-  //       console.log(responseAddTuppel.data.message)
-  //       console.log(responseAddTuppel.data.insertedOrders.length)
-  //       // setUpdatedDataMessage(responseAddTuppel.data.insertedOrders.lengt)
-
-  //     if (responseAddTuppel.data && responseAddTuppel.data.insertedOrders) {
-  //       // Create an object with job_uuid and message
-  //       const messageObject = {
-  //         job_uuid: insertedOrders[0].job_uuid,
-  //         message: message,
-  //         insertedOrdersAmount: insertedOrdersAmount,
-  //         selectedData: selectedData.find(data => data.data.uuid === responseAddTuppel.data.insertedOrders[0].job_uuid) || {}
-  //       };
-  //       setUpdatedDataMessage(prevState => [...prevState, messageObject]);
-  //       console.log(
-  //         `Successfully sent batch of ${batch.length} and ${responseAddTuppel.data.insertedOrders.length} tuples were inserted`,
-  //         responseAddTuppel
-  //       );
-  //     } else {
-  //       console.log(
-  //         `Successfully sent batch of ${batch.length} but no information about inserted orders was provided`,
-  //         responseAddTuppel
-  //       );
-  //     }
-  //       startIndex += batchSize;
-  //     }
-
-  //     uppdateNetCatalogueProjects(responseArray);
-  //     console.log('All tuples added successfully!');
-  //     console.log("---");
-  //   } catch (error) {
-  //     console.error('Error adding tuples to net_catalogue_order', error);
-  //   }
-  // };
 
   // Function to fetch existing subjectUUIDs from net_catalogue_orders
   const fetchExistingProjects = async (responseArray) => {
     try {
-      console.log(responseArray[0].project_id)
+      console.log("project_id: ", responseArray[0].project_id)
       const response = await axios.get(
         `${baseURL}/api/net_catalogue_orders/subjectuuid`,
         {
@@ -524,20 +460,34 @@ const Index = () => {
       await Promise.all(updatePromises);
       // console.log("uppdateNetCatalogueProjects response: ", updatePromises);
 
-      console.log('---');
-      console.log('All projects updated successfully');
-      console.log('---');
+      // console.log('---');
+      // console.log('All projects updated successfully');
+      // console.log('---');
+
       // const uuidArray = selectedData.map(item => item.data.uuid);
       // console.log('UUID Array:', uuidArray);
       // setUuidArray(uuidArray);
-      finishD2();
+
+      setProcessedCount((prevCount) => prevCount + 1);
+      // finishD2();
     } catch (error) {
       console.error('Error updating net_catalogue_projects', error);
-      setLoadingD2(false);
+      // setLoadingD2(false);
     }
   };
 
+
+  useEffect(() => {
+    if (processedCount === selectedData.length && selectedData.length > 0) {
+      finishD2();
+    }
+  }, [processedCount, selectedData.length]);
+
+
   const finishD2 = () => {
+    console.log('All objects have been processed. Triggering finishD2.');
+    console.log('---');
+    setProcessedCount(0);
     //selecteddata2 used for alert message
     setUpdatedData(selectedData);
     setSelectedData([]);
@@ -556,6 +506,8 @@ const Index = () => {
 
     console.log(updatedDataMessage);
   };
+
+  
 
   // handle sorting
   const handleSort = (column) => {
