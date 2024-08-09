@@ -119,7 +119,7 @@ app.post("/api/net_catalogue_orders", (req, res) => {
 
     const values = newOrders.map((order) => [
       order.catalogues[0].price,
-      order.catalogues[0].vatvalue,
+      order.catalogues[0].vatvalue.toFixed(2),
       order.data_2,
       order.deliveryaddress,
       order.deliverycity,
@@ -127,6 +127,7 @@ app.post("/api/net_catalogue_orders", (req, res) => {
       order.deliverypostalcode,
       order.orderuuid,
       order.portaluuid,
+      "Catalog Control",
       order.project_id,
       order.projectname,
       order.socialnumber,
@@ -137,7 +138,7 @@ app.post("/api/net_catalogue_orders", (req, res) => {
       order.usermobile,
       order.username,
       "NO ORDER",
-      "NULL"
+      null
     ]);
 
     console.log(`Number of new orders to insert: ${values.length}`);
@@ -146,7 +147,7 @@ app.post("/api/net_catalogue_orders", (req, res) => {
     INSERT INTO net_catalogue_orders (
       price, vatvalue,
       status, deliveryaddress, deliverycity, deliveryname,
-      deliverypostalcode, orderuuid, portaluuid,
+      deliverypostalcode, orderuuid, portaluuid, originating,
       project_id, project, socialnumber, subjectname,
       subjectuuid, team, useremail, usermobile, username, original_orderuuid, order_created
     )

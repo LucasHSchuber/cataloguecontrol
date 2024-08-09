@@ -369,7 +369,7 @@ const Index = () => {
           console.log(responseAddTuppel);
           console.log(responseAddTuppel.data.message);
           // console.log(responseAddTuppel.data.insertedOrders.length);
-
+          console.log('insertedOrdersAmount', insertedOrdersAmount);
           if (insertedOrders.length > 0) {
             // Create an object with job_uuid and message
             const messageObject = {
@@ -384,7 +384,24 @@ const Index = () => {
                 ) || {},
             };
             console.log(messageObject);
-            setUpdatedDataMessage((prevState) => [...prevState, messageObject]);
+            // setUpdatedDataMessage((prevState) => [...prevState, messageObject]);
+            //update message with data to display on interface
+            setUpdatedDataMessage((prevState) => {
+              const existingIndex = prevState.findIndex(
+                (item) => item.job_uuid === messageObject.job_uuid
+              );
+          
+              if (existingIndex !== -1) {
+                const updatedMessages = [...prevState];
+                updatedMessages[existingIndex] = {
+                  ...updatedMessages[existingIndex],
+                  insertedOrdersAmount: updatedMessages[existingIndex].insertedOrdersAmount + insertedOrdersAmount,
+                };
+                return updatedMessages; 
+              } else {
+                return [...prevState, messageObject]; 
+              }
+            });
             console.log(
               `Successfully sent batch of ${batch.length} and ${responseAddTuppel.data.insertedOrders.length} tuples were inserted`,
               responseAddTuppel
@@ -402,7 +419,24 @@ const Index = () => {
                 ) || {},
             };
             console.log(messageObject);
-            setUpdatedDataMessage((prevState) => [...prevState, messageObject]);
+            // setUpdatedDataMessage((prevState) => [...prevState, messageObject]);
+            //update message with data to display on interface
+            setUpdatedDataMessage((prevState) => {
+              const existingIndex = prevState.findIndex(
+                (item) => item.job_uuid === messageObject.job_uuid
+              );
+          
+              if (existingIndex !== -1) {
+                const updatedMessages = [...prevState];
+                updatedMessages[existingIndex] = {
+                  ...updatedMessages[existingIndex],
+                  insertedOrdersAmount: updatedMessages[existingIndex].insertedOrdersAmount + insertedOrdersAmount,
+                };
+                return updatedMessages; 
+              } else {
+                return [...prevState, messageObject]; 
+              }
+            });
             console.log(
               `Successfully sent batch of ${batch.length} but no information about inserted orders was provided`,
               responseAddTuppel
@@ -504,10 +538,10 @@ const Index = () => {
       setShowD2SuccessMessage(false);
     }, 2000);
 
-    console.log(updatedDataMessage);
+    console.log("updatedDataMessage: (after D2 triggered and run)", updatedDataMessage);
   };
 
-  
+
 
   // handle sorting
   const handleSort = (column) => {
@@ -570,11 +604,13 @@ const Index = () => {
       setErrorMessageRunD2Button(false);
     }
   };
+  
 
   // useEffect to call checkD2Null whenever selectedData changes
   useEffect(() => {
     checkD2Null();
   }, [selectedData]);
+
 
   const AddRow = (index, data) => {
     console.log(index);
