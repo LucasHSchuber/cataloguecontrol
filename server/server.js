@@ -70,12 +70,29 @@ app.post("/api/net_catalogue_projects", (req, res) => {
 
 
 // GET - API endpoint to fetch subjectuuids from net_catalogue_orders from MySQL
-app.get("/api/net_catalogue_orders/subjectuuid", (req, res) => {
+app.get("/api/net_catalogue_orders", (req, res) => {
   const project_id = req.query.project_id;
   if (!project_id) {
     return res.status(400).send("Missing project_id parameter");
   }
   const query = "SELECT * FROM net_catalogue_orders WHERE project_id = ?";
+  pool.query(query, [project_id], (err, results) => {
+    if (err) {
+      console.error("Error fetching subjectuuids from net_catalogue_orders:", err);
+      res.status(500).send("Error fetching subjectuuids from net_catalogue_orders");
+    } else {
+      res.json(results); 
+    }
+  });
+});
+
+// GET - API endpoint to fetch subjectuuids from net_catalogue_orders from MySQL
+app.get("/api/net_catalogue_orders/livonia", (req, res) => {
+  const project_id = req.query.project_id;
+  if (!project_id) {
+    return res.status(400).send("Missing project_id parameter");
+  }
+  const query = "SELECT * FROM net_catalogue_orders WHERE status = 1 AND project_id = ?";
   pool.query(query, [project_id], (err, results) => {
     if (err) {
       console.error("Error fetching subjectuuids from net_catalogue_orders:", err);

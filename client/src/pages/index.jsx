@@ -38,7 +38,7 @@ const Index = () => {
   
   const [selectedIndices, setSelectedIndices] = useState([]);
   const [selectedData, setSelectedData] = useState([]);
-  const [selectedData2, setSelectedData2] = useState([]);
+  // const [selectedData2, setSelectedData2] = useState([]);
   const [updatedData, setUpdatedData] = useState([]);
   const [updatedDataMessage, setUpdatedDataMessage] = useState([]);
   const [uuidArray, setUuidArray] = useState([]);
@@ -55,6 +55,8 @@ const Index = () => {
   const [showAddedRowMessage, setShowAddedRowMessage] = useState(false);
   const [showRemovedRowMessage, setShowRemovedRowMessage] = useState(false);
   const [showD2SuccessMessage, setShowD2SuccessMessage] = useState(false);
+
+  const [refreshProjects, setRefreshProjects] = useState(false);
 
   const [errorMessageLivoniaButton, setErrorMessageLivoniaButton] =
     useState(false);
@@ -98,7 +100,12 @@ const Index = () => {
 
   useEffect(() => {
     fetchProjects();
-  }, [year, country, status, searchString, isUnorderedList, selectedData2]);
+  // }, [year, country, status, searchString, isUnorderedList, refreshProjects]);
+  }, [year, country, status, searchString, isUnorderedList]);
+
+
+
+  //---------------------------------------- D2 FUNCTION ----------------------------------------
 
   const runD2 = async () => {
     console.log('-----------------------------');
@@ -463,7 +470,7 @@ const Index = () => {
     try {
       console.log("project_id: ", responseArray[0].project_id)
       const response = await axios.get(
-        `${baseURL}/api/net_catalogue_orders/subjectuuid`,
+        `${baseURL}/api/net_catalogue_orders`,
         {
           params: {
             project_id: responseArray[0].project_id,
@@ -522,16 +529,17 @@ const Index = () => {
     console.log('All objects have been processed. Triggering finishD2.');
     console.log('---');
     setProcessedCount(0);
-    //selecteddata2 used for alert message
     setUpdatedData(selectedData);
     setSelectedData([]);
     setSelectedIndices([]);
     // setCountry("")
     // setYear("")
-    setStatus('');
-    setIsUnorderedList(true);
+    // setStatus('');
+    // setIsUnorderedList(true);
     setSearchString('');
     setLoadingD2(false);
+
+    setRefreshProjects(!refreshProjects);
 
     setShowD2SuccessMessage(true);
     setTimeout(() => {
@@ -543,6 +551,265 @@ const Index = () => {
 
 
 
+
+   //---------------------------------------- LIVONIA FUNCTION  ----------------------------------------
+
+  const runLivonia = async () => {
+    console.log("--------------");
+    console.log('Livonia triggered');
+    console.log("--------------");
+    console.log('selectedData', selectedData);
+
+    //loopa igenom selecteddata och plocka ut varje tuppel från net_catalogue_orders
+    for (const item of selectedData) {
+      let project_id = item.data.uuid;
+      console.log(`project_id of index ${item.index}:` , project_id);
+
+      try {
+        const response = await axios.get(
+          `${baseURL}/api/net_catalogue_orders/livonia`,
+          {
+            params: {
+              project_id: project_id
+            },
+          }
+        ); 
+        // console.log('Response', response.data);
+        const orders = response.data;       
+        console.log('Orders', orders);
+
+           // Array to hold CSV data
+        let csvData = [
+          ["ExternalId", "Co", "Belopp", "Subject Namn", "Namn", "Adress", "Postnr", "Ort", "Projekt", "Lag"]
+        ]
+
+        for (const order of orders) {
+          console.log("orders length:", orders.length)
+          
+          // Insert into net_orders
+          const orderData = {
+            orderuuid: order.orderuuid,
+            portaluuid: order.portaluuid,
+            externalid: "111",
+            co: "111",
+            invoicenumber: "abc123", 
+            countrycode:  order.portaluuid,
+            originating: order.originating,
+            override_sum: null,
+            baseprice: order.price,
+            discount: 0,
+            deliveryprice: order.deliveryprice,
+            fee: 0,
+            paid: 0,
+            vatprocent: order.vatprocent,
+            vatvalue: order.vatvalue,
+            deliveryname: order.deliveryname,
+            deliveryaddress: order.deliveryaddress,
+            deliverypostalcode: order.deliverypostalcode,
+            deliverycity: order.deliverycity,
+            deliverytype: "BYMAIL",
+            paymenttype: "INVOICE",
+            socialnumber: order.socialnumber,
+            subjectuuid: order.subjectuuid,
+            subjectname: order.subjectname,
+            subjectemail: null,
+            subjectphone: null,
+            project: order.project,
+            project_id: order.project_id,
+            team: order.team,
+            username: order.username,
+            useremail: order.useremail,
+            usermobile: order.usermobile,
+            sheet_count: 0,
+            printed: null,
+            posted: null, 
+            post_weight: null,
+            cancelled: null,
+            expiration_days: 30,
+            debtfeedate: null,
+            debtfeedate2: null,
+            collection: null,
+            tags: null,
+            notes: null
+          };
+          console.log("orderData", orderData);
+          //insert orderData into net_orders with axios here
+
+          // insert into net_products
+          const productData = {
+            orderuuid: "123",
+            packagedescription: null,
+            description: 'Catalog',
+            price: order.price,
+            quantity: 1,
+            vatprocent: 6,
+            vatvalue:  order.vatvalue, 
+            return_factor: 1,
+            package_num: null,
+            deleted: 0,
+            created: new Date().toISOString()
+          };
+          console.log('productData', productData);
+          //insert orderData into net_products with axios here
+
+
+          //pushing each order to cvsData array
+          csvData.push([
+            "123",
+            "Co",
+            order.price,
+            order.subjectname,
+            order.deliveryname,
+            order.deliveryaddress,
+            order.deliverypostalcode,
+            order.deliverycity,
+            order.project,
+            order.team
+          ])
+
+          if (orders.length + 1 === csvData.length) {
+            console.log("cvsData:", csvData);
+
+            //sendcvsData as parameter to method for downloading cvsData to computer
+
+            csvData = [];
+          }
+        }
+
+      } catch (error) {
+        console.log('Error fetching project data from net_catalogue_orders', error);
+      }
+    }
+
+
+    //samla alla tuppler/ordrar i en array 
+    //generera ocr-nummer för varje tuppel/order på det sätt enligt php-kod (ska katalgonOCR börja på 3?)
+    //generear en cvs-fil för varje project - en array med arrayer (med header i firsta arrayen och resterande av alla tuppler/ordrar i övriga arrayer)
+    //sött in varje tuppel/order i net_orders med den data neligt php-kod
+    // updatera net_catalogue_orders kolumn status till "2"
+
+    // skapa en order i net_product (???)
+
+    //gör detta för varje projekt/object i selectedData 
+  }
+
+
+
+  //-------- CHECKING D2 COLUMN  --------
+
+  // Function to check if any object in selectedData has D2 === null
+  const checkD2Null = () => {
+    let D2isNull = '';
+    let NoneNulls = '';
+    for (let i = 0; i < selectedData.length; i++) {
+      if (selectedData[i].data.D2 === null) {
+        D2isNull = true;
+        console.log(selectedData[i]);
+        // break;
+      } else if (selectedData[i].data.D2 !== null) {
+        NoneNulls = true;
+      }
+    }
+    if (D2isNull) {
+      setErrorMessageLivoniaButton(true);
+      // console.log('D2 is null: one or more items have D2 as null');
+    } else {
+      setErrorMessageLivoniaButton(false);
+      // console.log('No nulls: no item has D2 as null');
+    }
+
+    if (NoneNulls) {
+      setErrorMessageRunD2Button(true);
+    } else {
+      setErrorMessageRunD2Button(false);
+    }
+  };
+
+  // useEffect to call checkD2Null whenever selectedData changes
+  useEffect(() => {
+    checkD2Null();
+  }, [selectedData]);
+
+
+  //-------- ADDING PROJECT TO SELECTEDDATA ARRAY --------
+
+  const AddRow = (index, data) => {
+    console.log(index);
+    console.log(data);
+
+    setSelectedIndices((prevSelectedIndices) => {
+      if (prevSelectedIndices.includes(data.uuid)) {
+        return prevSelectedIndices.filter((i) => i !== data.uuid);
+      } else {
+        return [...prevSelectedIndices, data.uuid];
+      }
+    });
+    console.log(selectedIndices);
+
+    setSelectedData((prevSelectedData) => {
+      if (selectedIndices.includes(data.uuid)) {
+        // Remove data if index is already selected
+        setShowRemovedRowMessage(true);
+        setTimeout(() => {
+          setShowRemovedRowMessage(false);
+        }, 500);
+        return prevSelectedData.filter((item) => item.data.uuid !== data.uuid);
+      } else {
+        setShowAddedRowMessage(true);
+        setTimeout(() => {
+          setShowAddedRowMessage(false);
+        }, 500);
+        // Add data if index is newly selected
+        console.log('selected data', selectedData);
+        return [...prevSelectedData, { index, data }];
+      }
+    });
+    console.log(selectedData);
+  };
+
+  //-------- FORMAT TIME --------
+  //foramt time
+  const formatDateTime = (dateTimeString) => {
+    const date = new Date(dateTimeString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  };
+
+
+  //-------- CLEARING DATA --------
+
+  const ClearAllSelected = () => {
+    setSelectedIndices([]);
+    setUuidArray([]);
+    setSelectedData([]);
+    setUpdatedDataMessage([]);
+    setShowRemovedRowMessage(true);
+    setTimeout(() => {
+      setShowRemovedRowMessage(false);
+    }, 500);
+  };
+
+  const removeSelectedData = (indexToRemove) => {
+    console.log('Index to remove:', indexToRemove);
+    setShowRemovedRowMessage(true);
+    setTimeout(() => {
+      setShowRemovedRowMessage(false);
+    }, 500);
+
+    setSelectedData((prevSelectedData) =>
+      prevSelectedData.filter((item) => item.data.uuid !== indexToRemove)
+    );
+    setSelectedIndices((prevSelectedIndices) =>
+      prevSelectedIndices.filter((index) => index !== indexToRemove)
+    );
+  };
+
+    //-------- SORTING AND SEARCHING TABLE --------
   // handle sorting
   const handleSort = (column) => {
     if (column === sortColumn) {
@@ -577,113 +844,6 @@ const Index = () => {
     setProjects(sortedProjects);
   };
 
-  // Function to check if any object in selectedData has D2 === null
-  const checkD2Null = () => {
-    let D2isNull = '';
-    let NoneNulls = '';
-    for (let i = 0; i < selectedData.length; i++) {
-      if (selectedData[i].data.D2 === null) {
-        D2isNull = true;
-        console.log(selectedData[i]);
-        // break;
-      } else if (selectedData[i].data.D2 !== null) {
-        NoneNulls = true;
-      }
-    }
-    if (D2isNull) {
-      setErrorMessageLivoniaButton(true);
-      // console.log('D2 is null: one or more items have D2 as null');
-    } else {
-      setErrorMessageLivoniaButton(false);
-      // console.log('No nulls: no item has D2 as null');
-    }
-
-    if (NoneNulls) {
-      setErrorMessageRunD2Button(true);
-    } else {
-      setErrorMessageRunD2Button(false);
-    }
-  };
-  
-
-  // useEffect to call checkD2Null whenever selectedData changes
-  useEffect(() => {
-    checkD2Null();
-  }, [selectedData]);
-
-
-  const AddRow = (index, data) => {
-    console.log(index);
-    console.log(data);
-
-    setSelectedIndices((prevSelectedIndices) => {
-      if (prevSelectedIndices.includes(index)) {
-        return prevSelectedIndices.filter((i) => i !== index);
-      } else {
-        return [...prevSelectedIndices, index];
-      }
-    });
-    console.log(selectedIndices);
-
-    setSelectedData((prevSelectedData) => {
-      if (selectedIndices.includes(index)) {
-        // Remove data if index is already selected
-        setShowRemovedRowMessage(true);
-        setTimeout(() => {
-          setShowRemovedRowMessage(false);
-        }, 500);
-        return prevSelectedData.filter((item) => item.index !== index);
-      } else {
-        setShowAddedRowMessage(true);
-        setTimeout(() => {
-          setShowAddedRowMessage(false);
-        }, 500);
-        // Add data if index is newly selected
-        console.log('selected data', selectedData);
-        return [...prevSelectedData, { index, data }];
-      }
-    });
-    console.log(selectedData);
-  };
-
-  //foramt time
-  const formatDateTime = (dateTimeString) => {
-    const date = new Date(dateTimeString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-  };
-
-  const ClearAllSelected = () => {
-    setSelectedIndices([]);
-    setUuidArray([]);
-    setSelectedData([]);
-    setUpdatedDataMessage([]);
-    setShowRemovedRowMessage(true);
-    setTimeout(() => {
-      setShowRemovedRowMessage(false);
-    }, 500);
-  };
-
-  const removeSelectedData = (indexToRemove) => {
-    console.log('Index to remove:', indexToRemove);
-    setShowRemovedRowMessage(true);
-    setTimeout(() => {
-      setShowRemovedRowMessage(false);
-    }, 500);
-
-    setSelectedData((prevSelectedData) =>
-      prevSelectedData.filter((item) => item.index !== indexToRemove)
-    );
-    setSelectedIndices((prevSelectedIndices) =>
-      prevSelectedIndices.filter((index) => index !== indexToRemove)
-    );
-  };
-
   const filterYear = (newValue) => {
     setYear(newValue);
     setSelectedIndices([]);
@@ -713,11 +873,16 @@ const Index = () => {
     console.log(isUnorderedList);
   };
 
+
+  
   return (
     <div className="wrapper">
-      {loadingD2 && (
-        <RingLoader className="loader-D2" color={'#123abc'} size={100} />
-      )}
+   {loadingD2 && (
+  <div className="loader-D2">
+    <h6 className="loader-text">Please wait while D2 is running...</h6>
+    <RingLoader className="loader-spinner" color={'#123abc'} size={50} />
+  </div>
+)}
       <div className="page-wrapper" style={{ opacity: loadingD2 ? '0.1' : '' }}>
         {/* <h6>
           {' '}
@@ -854,11 +1019,11 @@ const Index = () => {
               <tbody className="table-body">
                 {projects.map((p, index) => (
                   <tr
-                    key={index}
+                    key={p.uuid}
                     data-has_d2={p.D2 ? '1' : '0'}
                     data-can_wrap={p.new_orders > 0 ? '1' : '0'}
                     style={{
-                      backgroundColor: selectedIndices.includes(index)
+                      backgroundColor: selectedIndices.includes(p.uuid)
                         ? '#ECFFE8'
                         : '',
                     }}
@@ -963,12 +1128,12 @@ const Index = () => {
                     </td>
                     <td
                       title={
-                        data.selectedData.data.D2 !== null
-                          ? formatDateTime(data.selectedData.data.D2)
+                        data.insertedOrdersAmount > 0
+                          ? new Date().toLocaleString()
                           : 'null'
                       }
                     >
-                      <FontAwesomeIcon icon={faCheck} />
+                      {data.insertedOrdersAmount > 0 ? <FontAwesomeIcon icon={faCheck} /> : "---" }
                     </td>
                     <td>{data.selectedData.data.num_orders}</td>
                     <td>
@@ -989,50 +1154,19 @@ const Index = () => {
             </table>
             <div className="mt-3">
               <hr></hr>
-              <button
+              {/* <button
                 className="mr-2 button runD2"
-                disabled
-                title={
-                  errorMessageRunD2Button
-                    ? 'Some choosen projects has already been run by D2'
-                    : 'Run D2'
-                }
+                disabled={updatedDataMessage.some((item) => item.insertedOrdersAmount > 0)}
+                title={updatedDataMessage.some((item) => item.insertedOrdersAmount > 0 ? "At least one project has been run by D2" : "Run D2")}
               >
                 Run D2
-              </button>
+              </button> */}
               <button className="mr-2 button">Send to Engine</button>
               <button
                 className="button"
-                disabled={errorMessageLivoniaButton}
-                title={
-                  errorMessageLivoniaButton
-                    ? "At least one of your selected projects needs to be run by D2 in order to click 'Livonia'"
-                    : 'Livonia'
-                }
               >
                 Livonia
               </button>
-              {errorMessageLivoniaButton && (
-                <div>
-                  <h6
-                    className="mt-2"
-                    style={{ color: 'black', fontSize: '0.9em' }}
-                  >
-                    Livonia button: Not all projects has been run by D2
-                  </h6>
-                </div>
-              )}
-              {errorMessageRunD2Button && (
-                <div>
-                  <h6
-                    className="mt-2"
-                    style={{ color: 'black', fontSize: '0.9em' }}
-                  >
-                    RunD2 button: Some choosen projects has already been run by
-                    D2
-                  </h6>
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -1063,7 +1197,7 @@ const Index = () => {
                     <FontAwesomeIcon
                       className="remove-selected-data-button"
                       icon={faTimes}
-                      onClick={() => removeSelectedData(data.index)}
+                      onClick={() => removeSelectedData(data.data.uuid)}
                       title="Remove project"
                     />
                   </td>
@@ -1114,6 +1248,7 @@ const Index = () => {
             <button
               className="button"
               disabled={errorMessageLivoniaButton}
+              onClick={runLivonia}
               title={
                 errorMessageLivoniaButton
                   ? "At least one of your selected projects needs to be run by D2 in order to click 'Livonia'"

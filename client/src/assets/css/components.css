@@ -33,10 +33,18 @@
   
   /* loader */
   .loader-D2 {
-    height: 0em !important;
     position: fixed;
-    top: 20em;
-    left: 50%; 
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     z-index: 2000;
+  }
+  
+  .loader-text {
+    margin-bottom: 1em;
   }
   
