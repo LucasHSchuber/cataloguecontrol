@@ -318,6 +318,70 @@ const pool = mysql.createPool(dbConfig);
     });
   });
 
+// Generating invoice number 
+app.post('/api/get_invoice_number', (req, res) => {
+  const { portaluuid } = req.body;
+  const year = new Date().getFullYear();
+
+  pool.getConnection((err, connection) => {
+    if (err) {
+      console.error("Error getting connection:", err);
+      return res.status(500).send("Failed to get database connection");
+    }
+
+    connection.beginTransaction(async (err) => {
+      if (err) {
+        console.error("Error starting transaction:", err);
+        connection.release();
+        return res.status(500).send("Failed to start transaction");
+      }
+
+      let query = `
+        SELECT * FROM neo_invoice_data 
+        WHERE portaluuid = ? AND year = ? 
+        FOR UPDATE
+      `;
+
+      connection.query(query, [portaluuid, year], (err, rows) => {
+        if (err) {
+          console.error("Error fetching invoice data:", err);
+          connection.rollback(() => connection.release());
+          return res.status(500).send("Error fetching invoice data");
+        }
+
+        let invoicenumber = rows.length === 0 ? 1 : rows[0].value + 1;
+
+        let insertQuery = `
+          INSERT INTO neo_invoice_data (portaluuid, year, value) 
+          VALUES (?, ?, ?) 
+          ON DUPLICATE KEY UPDATE value = ?
+        `;
+
+        connection.query(insertQuery, [portaluuid, year, invoicenumber, invoicenumber], (err) => {
+          if (err) {
+            console.error("Error inserting/updating invoice data:", err);
+            connection.rollback(() => connection.release());
+            return res.status(500).send("Error updating invoice data");
+          }
+
+          connection.commit((err) => {
+            if (err) {
+              console.error("Error committing transaction:", err);
+              connection.rollback(() => connection.release());
+              return res.status(500).send("Failed to commit transaction");
+            }
+
+            connection.release();
+            res.json({ invoicenumber: `${year}-${invoicenumber}` });
+          });
+        });
+      });
+    });
+  });
+});
+
+
+
 
   // API-endpoint to save CSV-file on server
   app.post("/api/save-csv", (req, res) => {

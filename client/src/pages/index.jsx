@@ -594,14 +594,16 @@ const Index = () => {
 	      let i = 1;
 				for (const order of orders) {
 					console.log("orders length:", orders.length)
-					
+					const invoicenumber = await getInvoiceNumber(order.portaluuid);
+					console.log("Invoice number from getInvoiceNumber method:", invoicenumber);
+
 					// Insert into net_orders
 					const orderData = {
 						orderuuid: order.orderuuid,
 						portaluuid: order.portaluuid,
 						externalid: i,
 						co: 111,
-						invoicenumber: "abc123", 
+						invoicenumber: invoicenumber, 
 						countrycode:  order.portaluuid,
 						originating: order.originating,
 						override_sum: null,
@@ -728,6 +730,17 @@ const Index = () => {
 
 		//gör detta för varje projekt/object i selectedData 
 	}
+
+	//method to retrieve invoice number
+	async function getInvoiceNumber(portaluuid) {
+    try {
+        const response = await axios.post(`${baseURL}/api/get_invoice_number`, { portaluuid });
+        return response.data.invoicenumber;
+    } catch (error) {
+        console.error("Error fetching invoice number:", error);
+        throw new Error("Unable to fetch invoice number");
+    }
+  }
 
 	//method to download csv data to computer
 	const downloadCSVdata = (csvData, deliveryname) => {
