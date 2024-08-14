@@ -412,7 +412,7 @@ const pool = mysql.createPool(dbConfig);
     const { csvContent, project_id } = req.body; 
 
     const timestamp = Date.now();
-    const fileName = `csv-backup-projectid:${project_id}-${timestamp}.csv`;
+    const fileName = `csv-backup-time-${timestamp}.csv`;
     const filePath = path.join(__dirname, "backups", fileName);
 
     // Spara CSV-innehållet som en fil
@@ -431,6 +431,7 @@ const pool = mysql.createPool(dbConfig);
     });
   });
 
+  
 // Start server
 app.listen(port, () => {
   console.log("----------------------------------------");

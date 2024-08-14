@@ -103,8 +103,8 @@ const Index = () => {
 
 	useEffect(() => {
 		fetchProjects();
-	// }, [year, country, status, searchString, isUnorderedList, refreshProjects]);
-	}, [year, country, status, searchString, isUnorderedList]);
+	}, [year, country, status, searchString, isUnorderedList, refreshProjects]);
+	// }, [year, country, status, searchString, isUnorderedList]);
 
 
 
@@ -550,6 +550,7 @@ const Index = () => {
 		}, 2000);
 
 		console.log("updatedDataMessage: (after D2 triggered and run)", updatedDataMessage);
+		console.log("updatedDataMessage.selectedData: (after D2 triggered and run)", updatedDataMessage.map((data) => data.selectedData));
 	};
 
 
@@ -557,16 +558,14 @@ const Index = () => {
 
 	 //---------------------------------------- LIVONIA FUNCTION  ----------------------------------------
 
-	const runLivonia = async () => {
+	const runLivonia = async (data) => {
 		console.log("--------------");
 		console.log('Livonia triggered');
 		console.log("--------------");
-		console.log('selectedData', selectedData);
-
-		setLoadingLivonia(true);
+		console.log('selectedData', data);
 
 		//loopa igenom selecteddata och plocka ut varje tuppel från net_catalogue_orders
-		for (const item of selectedData) {
+		for (const item of data) {
 			let project_id = item.data.uuid;
 			console.log(`project_id of index ${item.index}:` , project_id);
 
@@ -593,6 +592,8 @@ const Index = () => {
 				  }, 2500);
 					setLoadingLivonia(false);
 					return;
+				} else {
+					setLoadingLivonia(true);
 				}
 
 				//Array to hold CSV data
@@ -736,7 +737,7 @@ const Index = () => {
 						const responseOrder = await axios.post(`${baseURL}/api/net_orders`, {
 							orderData
 						})
-						console.log("response orderData", responseOrder);
+						// console.log("response orderData", responseOrder);
 					} catch (error) {
 						console.log("Error inserting orderData to database", error);
 					}
@@ -761,7 +762,7 @@ const Index = () => {
 						const responseProduct = await axios.post(`${baseURL}/api/net_products`, {
 							productData: productData
 						})
-						console.log("Response productData", responseProduct);
+						// console.log("Response productData", responseProduct);
 					} catch (error) {
 						console.log("Error inserting productData into database", error);
 					}
@@ -771,7 +772,7 @@ const Index = () => {
 						const responseStatus = await axios.post(`${baseURL}/api/net_catalogue_orders/statusupdate`, {
 							orderuuid: order.orderuuid
 						})
-						console.log("Successfully update status in net_catalogue_orders", responseStatus);
+						// console.log("Successfully update status in net_catalogue_orders", responseStatus);
 					} catch (error) {
 						console.log("Error updating status in net_catalogue_orders", error);
 					}
@@ -809,26 +810,23 @@ const Index = () => {
 			
 		}
 
+		console.log("------------------------------------");
+		console.log("Livonia finished running!");
+		console.log("------------------------------------");
 		setLoadingLivonia(false);
 		setShowSuccessLivoniaMessage(true);
 		setTimeout(() => {
 			setShowSuccessLivoniaMessage(false);
 		}, 2500);
 
-		console.log("------------------------------------");
-		console.log("Livonia finished running!");
-		console.log("------------------------------------");
+		setSelectedData([]);
+		setSelectedIndices([]);
+		setUpdatedDataMessage([]);
 
-		//samla alla tuppler/ordrar i en array 
-		//generera ocr-nummer för varje tuppel/order på det sätt enligt php-kod (ska katalgonOCR börja på 3?)
-		//generear en csv-fil för varje project - en array med arrayer (med header i firsta arrayen och resterande av alla tuppler/ordrar i övriga arrayer)
-		//sött in varje tuppel/order i net_orders med den data neligt php-kod
-		// updatera net_catalogue_orders kolumn status till "2"
+		setRefreshProjects(!refreshProjects);
 
-		// skapa en order i net_product (???)
-
-		//gör detta för varje projekt/object i selectedData 
 	}
+
 
 	//method to retrieve invoice number
 	async function getInvoiceNumber(portaluuid) {
@@ -853,8 +851,11 @@ const Index = () => {
 		const link = document.createElement("a");
 		const url = URL.createObjectURL(blob);
 		link.setAttribute("href", url);
-		const timestamp = Date.now();
-		link.setAttribute("download", `csvData-projectid:${project_id}-${timestamp}.csv`);
+	
+		const now = new Date().toISOString();
+		const formattedDateTime = formatDateTime(now).replace(/:/g, '-'); 
+		link.setAttribute("download", `csvData-projectid:${project_id}-date:${formattedDateTime}.csv`);
+		
 		document.body.appendChild(link);
 	
 		link.click();
@@ -912,8 +913,8 @@ const Index = () => {
 	//-------- ADDING PROJECT TO SELECTEDDATA ARRAY --------
 
 	const AddRow = (index, data) => {
-		console.log(index);
-		console.log(data);
+		console.log("Added index: ", index);
+		console.log("Added row: ", data);
 
 		setSelectedIndices((prevSelectedIndices) => {
 			if (prevSelectedIndices.includes(data.uuid)) {
@@ -922,7 +923,7 @@ const Index = () => {
 				return [...prevSelectedIndices, data.uuid];
 			}
 		});
-		console.log(selectedIndices);
+		console.log("selectedIndices:", selectedIndices);
 
 		setSelectedData((prevSelectedData) => {
 			if (selectedIndices.includes(data.uuid)) {
@@ -1344,6 +1345,8 @@ const Index = () => {
 							<button className="mr-2 button">Send to Engine</button>
 							<button
 								className="button"
+								disabled={updatedDataMessage.some((item) => item.insertedOrders <= 0)}
+								onClick={() => runLivonia(updatedDataMessage.map(data => data.selectedData))}
 							>
 								Livonia
 							</button>
@@ -1428,7 +1431,7 @@ const Index = () => {
 						<button
 							className="button"
 							disabled={errorMessageLivoniaButton}
-							onClick={runLivonia}
+							onClick={() => runLivonia(selectedData)}
 							title={
 								errorMessageLivoniaButton
 									? "At least one of your selected projects needs to be run by D2 in order to click 'Livonia'"
