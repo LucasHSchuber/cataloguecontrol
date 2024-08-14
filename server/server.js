@@ -318,77 +318,101 @@ const pool = mysql.createPool(dbConfig);
     });
   });
 
-// Generating invoice number 
-app.post('/api/get_invoice_number', (req, res) => {
-  const { portaluuid } = req.body;
-  const year = new Date().getFullYear();
+  //Endpoint to create a reservation in cs_ocr_reservations table
+  app.post("/api/create_reservation", (req, res) => {
+    const { group_id, user_id } = req.body;
+    const getMaxIdQuery = "SELECT MAX(id) + 1 AS id FROM cs_ocr_reservations LIMIT 1";
 
-  pool.getConnection((err, connection) => {
-    if (err) {
-      console.error("Error getting connection:", err);
-      return res.status(500).send("Failed to get database connection");
-    }
-
-    connection.beginTransaction(async (err) => {
+    pool.query(getMaxIdQuery, (err, result) => {
       if (err) {
-        console.error("Error starting transaction:", err);
-        connection.release();
-        return res.status(500).send("Failed to start transaction");
+        console.error("Error fetching max ID from cs_ocr_reservations:", err);
+        return res.status(500).send("Error creating reservation");
       }
 
-      let query = `
-        SELECT * FROM neo_invoice_data 
-        WHERE portaluuid = ? AND year = ? 
-        FOR UPDATE
-      `;
+      const newId = result[0].id || 1;
+      // Insert the new reservation
+      const insertReservationQuery = "INSERT INTO cs_ocr_reservations (group_id, user_id, date) VALUES (?, ?, NOW())";
+      const values = [group_id, user_id];
 
-      connection.query(query, [portaluuid, year], (err, rows) => {
+      pool.query(insertReservationQuery, values, (err, results) => {
         if (err) {
-          console.error("Error fetching invoice data:", err);
-          connection.rollback(() => connection.release());
-          return res.status(500).send("Error fetching invoice data");
+          console.error("Error inserting new reservation into cs_ocr_reservations:", err);
+          return res.status(500).send("Error creating reservation");
+        }
+        res.status(200).json({ message: "Reservation created successfully", reservationId: newId, result: results });
+      });
+    });
+  });
+
+  // Generating invoice number 
+  app.post('/api/get_invoice_number', (req, res) => {
+    const { portaluuid } = req.body;
+    const year = new Date().getFullYear();
+
+    pool.getConnection((err, connection) => {
+      if (err) {
+        console.error("Error getting connection:", err);
+        return res.status(500).send("Failed to get database connection");
+      }
+
+      connection.beginTransaction(async (err) => {
+        if (err) {
+          console.error("Error starting transaction:", err);
+          connection.release();
+          return res.status(500).send("Failed to start transaction");
         }
 
-        let invoicenumber = rows.length === 0 ? 1 : rows[0].value + 1;
-
-        let insertQuery = `
-          INSERT INTO neo_invoice_data (portaluuid, year, value) 
-          VALUES (?, ?, ?) 
-          ON DUPLICATE KEY UPDATE value = ?
+        let query = `
+          SELECT * FROM neo_invoice_data 
+          WHERE portaluuid = ? AND year = ? 
+          FOR UPDATE
         `;
 
-        connection.query(insertQuery, [portaluuid, year, invoicenumber, invoicenumber], (err) => {
+        connection.query(query, [portaluuid, year], (err, rows) => {
           if (err) {
-            console.error("Error inserting/updating invoice data:", err);
+            console.error("Error fetching invoice data:", err);
             connection.rollback(() => connection.release());
-            return res.status(500).send("Error updating invoice data");
+            return res.status(500).send("Error fetching invoice data");
           }
 
-          connection.commit((err) => {
+          let invoicenumber = rows.length === 0 ? 1 : rows[0].value + 1;
+
+          let insertQuery = `
+            INSERT INTO neo_invoice_data (portaluuid, year, value) 
+            VALUES (?, ?, ?) 
+            ON DUPLICATE KEY UPDATE value = ?
+          `;
+
+          connection.query(insertQuery, [portaluuid, year, invoicenumber, invoicenumber], (err) => {
             if (err) {
-              console.error("Error committing transaction:", err);
+              console.error("Error inserting/updating invoice data:", err);
               connection.rollback(() => connection.release());
-              return res.status(500).send("Failed to commit transaction");
+              return res.status(500).send("Error updating invoice data");
             }
 
-            connection.release();
-            res.json({ invoicenumber: `${year}-${invoicenumber}` });
+            connection.commit((err) => {
+              if (err) {
+                console.error("Error committing transaction:", err);
+                connection.rollback(() => connection.release());
+                return res.status(500).send("Failed to commit transaction");
+              }
+
+              connection.release();
+              res.json({ invoicenumber: `${year}-${invoicenumber}` });
+            });
           });
         });
       });
     });
   });
-});
-
-
 
 
   // API-endpoint to save CSV-file on server
   app.post("/api/save-csv", (req, res) => {
-    const { csvContent, deliveryname } = req.body; 
+    const { csvContent, project_id } = req.body; 
 
     const timestamp = Date.now();
-    const fileName = `csv-backup-${deliveryname}-${timestamp}.csv`;
+    const fileName = `csv-backup-projectid:${project_id}-${timestamp}.csv`;
     const filePath = path.join(__dirname, "backups", fileName);
 
     // Spara CSV-innehållet som en fil

@@ -33,6 +33,7 @@ const Index = () => {
 	
 	const [loading, setLoading] = useState(false);
 	const [loadingD2, setLoadingD2] = useState(false);
+	const [loadingLivonia, setLoadingLivonia] = useState(false);
 
 	const [processedCount, setProcessedCount] = useState(0);
 	
@@ -55,6 +56,8 @@ const Index = () => {
 	const [showAddedRowMessage, setShowAddedRowMessage] = useState(false);
 	const [showRemovedRowMessage, setShowRemovedRowMessage] = useState(false);
 	const [showD2SuccessMessage, setShowD2SuccessMessage] = useState(false);
+	const [showErrorLivoniaMessage, setShowErrorLivoniaMessage] = useState(false);
+	const [showSuccessLivoniaMessage, setShowSuccessLivoniaMessage] = useState(false);
 
 	const [refreshProjects, setRefreshProjects] = useState(false);
 
@@ -560,6 +563,8 @@ const Index = () => {
 		console.log("--------------");
 		console.log('selectedData', selectedData);
 
+		setLoadingLivonia(true);
+
 		//loopa igenom selecteddata och plocka ut varje tuppel från net_catalogue_orders
 		for (const item of selectedData) {
 			let project_id = item.data.uuid;
@@ -576,35 +581,117 @@ const Index = () => {
 				); 
 				// console.log('Response', response.data);
 				const orders = response.data;       
-				console.log('Orders', orders);
-				console.log('Orders length:', orders.length);
+				// console.log('Orders', orders);
+				// console.log('Orders length:', orders.length);
 
+				//If orders are 0, print error
 				if (orders.length === 0) {
 					console.log("There are no current orders to process!");
+					setShowErrorLivoniaMessage(true);
+				  setTimeout(() => {
+					  setShowErrorLivoniaMessage(false);
+				  }, 2500);
+					setLoadingLivonia(false);
 					return;
 				}
 
-				// Array to hold CSV data
+				//Array to hold CSV data
 				let csvData = [
 					["ExternalId", "Co", "Belopp", "Subject Namn", "Namn", "Adress", "Postnr", "Ort", "Projekt", "Lag"]
 				]
 
-				//generate ocr numbers and other payment data here
 
-	      let i = 1;
+				//Anropar REST API för att hämta OCR-nummer
+				let ocrArray = [];
+				let token = "78120e1d-5a19-11ef-a4a2-b496919a4466";
+				try {
+					const data = {
+						portaluuid: item.data.portaluuid,
+						count: orders.length,
+						group_id: 3,
+						test_mode: false,
+					};
+					const respOcArray = await axios.post(
+						"/api/index.php/rest/ocr/reserve",
+							data,
+						{
+							headers: {
+								Authorization: `Token ${token}`, 
+							},
+						}
+					);
+					console.log("respOcArray", respOcArray);
+					ocrArray = respOcArray.data.result;
+				} catch (error) {
+					console.log("Error getting OCRnumbers from rest API", error);
+				}
+
+				console.log("ocrArray", ocrArray);
+
+				
+				// let ocrReservationNbr = 0;
+				// //create OCR reservation
+				// try {
+				// 	const responseOCRReservation = await axios.post(`${baseURL}/api/create_reservation`, {
+				// 		group_id: 3,
+				// 		user_id: 111
+				// 	});
+				// 	console.log("responseOCRReservation", responseOCRReservation);
+				// 	// console.log("responseOCRReservation newId", responseOCRReservation.data.reservationId);
+				// 	ocrReservationNbr = responseOCRReservation.data.reservationId;
+				// } catch (error) {
+				// 	console.log("Error creating a reservation", error);
+				// }
+				// console.log(ocrReservationNbr);
+
+
+				// //reserve OCR number
+				// const responseOcrNumbers = await axios.post(`${baseURL}/reserve_ocr_numbers`, {
+				// 	count: orders.length, 
+				// 	reservation_id: ocrReservationNbr,
+				// });
+
+				
+				const deliveryNameFix = {
+					"2dba368b-6205-11e1-b101-0025901d40ea": "Till målsman för ",
+					"1cfa0ec6-d7de-11e1-b101-0025901d40ea": "",
+					"8d944c93-9de4-11e2-882a-0025901d40ea": "",
+					"f41d5c48-5af3-94db-f32d-3a51656b2c53": "",
+					"da399c45-3cf2-11ea-b287-ac1f6b419120": ""
+				};
+
+				let cc = "se";
+				if (item.data.portaluuid === "1cfa0ec6-d7de-11e1-b101-0025901d40ea") {
+					cc = 'fi';
+				} else if (item.data.portaluuid === "8d944c93-9de4-11e2-882a-0025901d40ea") {
+						cc = 'dk';
+				} else if (item.data.portaluuid === "f41d5c48-5af3-94db-f32d-3a51656b2c53") {
+						cc = 'no';
+				} else if (item.data.portaluuid === "da399c45-3cf2-11ea-b287-ac1f6b419120") {
+						cc = 'de';
+				}
+				console.log("country code: ", cc);
+
+
+	      let i = 0;
 				for (const order of orders) {
-					console.log("orders length:", orders.length)
+					// console.log("orders length:", orders.length)
 					const invoicenumber = await getInvoiceNumber(order.portaluuid);
-					console.log("Invoice number from getInvoiceNumber method:", invoicenumber);
+					// console.log("Invoice number from getInvoiceNumber method:", invoicenumber);
+
+					if (order.subjectname === order.deliveryname) {
+							order.deliveryname = deliveryNameFix[order.portaluuid] + order.subjectname;
+							console.log("ALERT! subjectname = deliveryname");
+					}
 
 					// Insert into net_orders
 					const orderData = {
-						orderuuid: order.orderuuid,
+						orderuuid: ocrArray[i].slice(0,8) + "-cat",
 						portaluuid: order.portaluuid,
-						externalid: i,
-						co: 111,
+						externalid: ocrArray[i].slice(0,8),
+						co: ocrArray[i],
 						invoicenumber: invoicenumber, 
-						countrycode:  order.portaluuid,
+						countrycode:  cc,
 						originating: order.originating,
 						override_sum: null,
 						baseprice: order.price,
@@ -644,7 +731,7 @@ const Index = () => {
 						notes: null
 					};
 					console.log("orderData", orderData);
-          i++;
+          
 					try {
 						const responseOrder = await axios.post(`${baseURL}/api/net_orders`, {
 							orderData
@@ -653,11 +740,10 @@ const Index = () => {
 					} catch (error) {
 						console.log("Error inserting orderData to database", error);
 					}
-				 
 
 					//insert into net_products
 					const productData = {
-						orderuuid: 123,
+						orderuuid: ocrArray[i].slice(0,8) + "-cat",
 						packagedescription: null,
 						description: 'Catalog',
 						price: order.price,
@@ -670,7 +756,7 @@ const Index = () => {
 						created: new Date().toISOString()
 					};
 					console.log('productData', productData);
-					
+
 					try {
 						const responseProduct = await axios.post(`${baseURL}/api/net_products`, {
 							productData: productData
@@ -690,10 +776,9 @@ const Index = () => {
 						console.log("Error updating status in net_catalogue_orders", error);
 					}
 
-
 					//pushing each order to csvData array
 					csvData.push([
-						"123",
+						ocrArray[i].slice(0,8),
 						"Co",
 						order.price,
 						order.subjectname,
@@ -705,20 +790,34 @@ const Index = () => {
 						order.team
 					])
 
-					if (orders.length > 0 && orders.length + 1 === csvData.length) {
+					if (orders.length + 1 === csvData.length) {
 						// console.log("csvData:", csvData);
 						//sendcsvData as parameter to method for downloading csvData to computer
-						downloadCSVdata(csvData, order.deliveryname);
+						downloadCSVdata(csvData, project_id);
 						csvData = [];
-					} else (
-						console.log("Error: Either there are no orders or the csv data could not be created normally")
-					)
-				}
+					} 
 
+					i = i + 1; // increase counter
+
+				}
 			} catch (error) {
 				console.log('Error fetching project data from net_catalogue_orders', error);
 			}
+
+			console.log(item.data.name + "done!");
+			console.log("------------------------------------");
+			
 		}
+
+		setLoadingLivonia(false);
+		setShowSuccessLivoniaMessage(true);
+		setTimeout(() => {
+			setShowSuccessLivoniaMessage(false);
+		}, 2500);
+
+		console.log("------------------------------------");
+		console.log("Livonia finished running!");
+		console.log("------------------------------------");
 
 		//samla alla tuppler/ordrar i en array 
 		//generera ocr-nummer för varje tuppel/order på det sätt enligt php-kod (ska katalgonOCR börja på 3?)
@@ -743,7 +842,7 @@ const Index = () => {
   }
 
 	//method to download csv data to computer
-	const downloadCSVdata = (csvData, deliveryname) => {
+	const downloadCSVdata = (csvData, project_id) => {
 		console.log("csvData:", csvData);
 
 		// Convert the array to a CSV string
@@ -754,19 +853,20 @@ const Index = () => {
 		const link = document.createElement("a");
 		const url = URL.createObjectURL(blob);
 		link.setAttribute("href", url);
-		link.setAttribute("download", `csvData-${deliveryname}.csv`);
+		const timestamp = Date.now();
+		link.setAttribute("download", `csvData-projectid:${project_id}-${timestamp}.csv`);
 		document.body.appendChild(link);
 	
 		link.click();
 		document.body.removeChild(link);
 
-		saveCSVOnServer(csvContent, deliveryname);
+		saveCSVOnServer(csvContent, project_id);
 	}
 
 	//method to save csv data on server
-	const saveCSVOnServer = async (csvContent, deliveryname) => {
+	const saveCSVOnServer = async (csvContent, project_id) => {
 		try {
-			const response = await axios.post(`${baseURL}/api/save-csv`, { csvContent: csvContent, deliveryname: deliveryname });
+			const response = await axios.post(`${baseURL}/api/save-csv`, { csvContent: csvContent, project_id: project_id });
 			console.log("CSV saved on server:", response.data);
 		} catch (error) {
 			console.error("Error saving CSV on server:", error);
@@ -955,13 +1055,15 @@ const Index = () => {
 	
 	return (
 		<div className="wrapper">
-	 {loadingD2 && (
-	<div className="loader-D2">
-		<h6 className="loader-text">Please wait while D2 is running...</h6>
-		<RingLoader className="loader-spinner" color={'#123abc'} size={50} />
-	</div>
-)}
-			<div className="page-wrapper" style={{ opacity: loadingD2 ? '0.1' : '' }}>
+			{(loadingD2 || loadingLivonia) && (
+					<div className="loader-D2">
+							<h6 className="loader-text">
+									Please wait while {loadingD2 ? "D2" : "Livonia"} is running...
+							</h6>
+							<RingLoader className="loader-spinner" color={'#123abc'} size={50} />
+					</div>
+			)}
+			<div className="page-wrapper" style={{ opacity: loadingD2 || loadingLivonia ? '0.1' : '' }}>
 				{/* <h6>
 					{' '}
 					<b>Catalog control</b>
@@ -1254,7 +1356,7 @@ const Index = () => {
 			{selectedData && selectedData.length > 0 && (
 				<div
 					className="mt-3 selected-data-box"
-					style={{ opacity: loadingD2 ? '0.1' : '' }}
+					style={{ opacity: loadingD2 || loadingLivonia? '0.1' : '' }}
 				>
 					<table className="selected-data-table">
 						<thead>
@@ -1341,7 +1443,7 @@ const Index = () => {
 									className="mt-2"
 									style={{ color: 'black', fontSize: '0.9em' }}
 								>
-									Livonia button: Not all projects has been run by D2
+									*Livonia button: Not all projects has been run by D2
 								</h6>
 							</div>
 						)}
@@ -1351,7 +1453,7 @@ const Index = () => {
 									className="mt-2"
 									style={{ color: 'black', fontSize: '0.9em' }}
 								>
-									RunD2 button: Some choosen projects has already been run by D2
+									*RunD2 button: Some choosen projects has already been run by D2
 								</h6>
 							</div>
 						)}
@@ -1381,7 +1483,24 @@ const Index = () => {
 					className="alert-message"
 					style={{ backgroundColor: '#C8FFAB', border: '0.5px solid green' }}
 				>
-					D2 has ran successfully:
+					D2: D2 has run successfully
+				</div>
+			)}
+			{/* Showing alert message for LIVONIA function  */}
+			{showErrorLivoniaMessage && (
+				<div
+					className="alert-message"
+					style={{ backgroundColor: '#FFBCAB', border: '0.5px solid green' }}
+				>
+					Livonia Error: There are no current orders to process
+				</div>
+			)}
+			{showSuccessLivoniaMessage && (
+				<div
+					className="alert-message"
+					style={{ backgroundColor: '#C8FFAB', border: '0.5px solid green' }}
+				>
+					Livonia: Livonia has run successfully
 				</div>
 			)}
 		</div>
