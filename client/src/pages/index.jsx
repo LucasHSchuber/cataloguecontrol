@@ -44,6 +44,9 @@ const Index = () => {
 	const [updatedDataMessage, setUpdatedDataMessage] = useState([]);
 	const [uuidArray, setUuidArray] = useState([]);
 
+	const [isProcessingComplete, setIsProcessingComplete] = useState(false);
+	const [csvDataHolder, setCsvDataHolder] = useState([]);
+
 	const [year, setYear] = useState('');
 	const [country, setCountry] = useState('');
 	const [status, setStatus] = useState('');
@@ -61,10 +64,12 @@ const Index = () => {
 
 	const [refreshProjects, setRefreshProjects] = useState(false);
 
-	const [errorMessageLivoniaButton, setErrorMessageLivoniaButton] =
-		useState(false);
+	const [errorMessageLivoniaButton, setErrorMessageLivoniaButton] = useState(false);
 	const [errorMessageRunD2Button, setErrorMessageRunD2Button] = useState('');
 
+
+
+	// method to fetch all projects from database
 	const fetchProjects = async () => {
 		setLoading(true);
 		try {
@@ -559,12 +564,16 @@ const Index = () => {
 	 //---------------------------------------- LIVONIA FUNCTION  ----------------------------------------
 
 	const runLivonia = async (data) => {
-		console.log("--------------");
-		console.log('Livonia triggered');
-		console.log("--------------");
+		console.log('-----------------------------');
+		console.log('-----------------------------');
+		console.log('LIVONIA TRIGGGERED');
+		console.log('-----------------------------');
+		console.log('-----------------------------');
 		console.log('selectedData', data);
+		// setCsvDataHolder([]);
 
-		//loopa igenom selecteddata och plocka ut varje tuppel från net_catalogue_orders
+		let csv_mode = 2;  
+		//loopa igenom selecteddata (data) och plocka ut varje tuppel från net_catalogue_orders
 		for (const item of data) {
 			let project_id = item.data.uuid;
 			console.log(`project_id of index ${item.index}:` , project_id);
@@ -580,8 +589,6 @@ const Index = () => {
 				); 
 				// console.log('Response', response.data);
 				const orders = response.data;       
-				// console.log('Orders', orders);
-				// console.log('Orders length:', orders.length);
 
 				//If orders are 0, print error
 				if (orders.length === 0) {
@@ -589,7 +596,7 @@ const Index = () => {
 					setShowErrorLivoniaMessage(true);
 				  setTimeout(() => {
 					  setShowErrorLivoniaMessage(false);
-				  }, 2500);
+				  }, 3000);
 					setLoadingLivonia(false);
 					return;
 				} else {
@@ -601,7 +608,6 @@ const Index = () => {
 					["ExternalId", "Co", "Belopp", "Subject Namn", "Namn", "Adress", "Postnr", "Ort", "Projekt", "Lag"]
 				]
 
-
 				//Anropar REST API för att hämta OCR-nummer
 				let ocrArray = [];
 				let token = "78120e1d-5a19-11ef-a4a2-b496919a4466";
@@ -610,7 +616,7 @@ const Index = () => {
 						portaluuid: item.data.portaluuid,
 						count: orders.length,
 						group_id: 3,
-						test_mode: false,
+						test_mode: true,
 					};
 					const respOcArray = await axios.post(
 						"/api/index.php/rest/ocr/reserve",
@@ -621,36 +627,12 @@ const Index = () => {
 							},
 						}
 					);
-					console.log("respOcArray", respOcArray);
+					// console.log("respOcArray", respOcArray);
 					ocrArray = respOcArray.data.result;
 				} catch (error) {
 					console.log("Error getting OCRnumbers from rest API", error);
 				}
-
 				console.log("ocrArray", ocrArray);
-
-				
-				// let ocrReservationNbr = 0;
-				// //create OCR reservation
-				// try {
-				// 	const responseOCRReservation = await axios.post(`${baseURL}/api/create_reservation`, {
-				// 		group_id: 3,
-				// 		user_id: 111
-				// 	});
-				// 	console.log("responseOCRReservation", responseOCRReservation);
-				// 	// console.log("responseOCRReservation newId", responseOCRReservation.data.reservationId);
-				// 	ocrReservationNbr = responseOCRReservation.data.reservationId;
-				// } catch (error) {
-				// 	console.log("Error creating a reservation", error);
-				// }
-				// console.log(ocrReservationNbr);
-
-
-				// //reserve OCR number
-				// const responseOcrNumbers = await axios.post(`${baseURL}/reserve_ocr_numbers`, {
-				// 	count: orders.length, 
-				// 	reservation_id: ocrReservationNbr,
-				// });
 
 				
 				const deliveryNameFix = {
@@ -674,7 +656,7 @@ const Index = () => {
 				console.log("country code: ", cc);
 
 
-	      let i = 0;
+	      		let i = 0;
 				for (const order of orders) {
 					// console.log("orders length:", orders.length)
 					const invoicenumber = await getInvoiceNumber(order.portaluuid);
@@ -791,12 +773,14 @@ const Index = () => {
 						order.team
 					])
 
-					if (orders.length + 1 === csvData.length) {
+					if (csv_mode === 1 && orders.length + 1 === csvData.length) {
 						// console.log("csvData:", csvData);
-						//sendcsvData as parameter to method for downloading csvData to computer
 						downloadCSVdata(csvData, project_id);
 						csvData = [];
-					} 
+					}
+					else if (csv_mode === 2 && orders.length + 1 === csvData.length) {
+						setCsvDataHolder(prevState => [...prevState, ...csvData]);
+					}
 
 					i = i + 1; // increase counter
 
@@ -810,6 +794,30 @@ const Index = () => {
 			
 		}
 
+		// Indicate processing is complete
+		console.log(csv_mode);
+		if (csv_mode === 2) {
+			setIsProcessingComplete(true);
+		}
+
+		//Finish Livonia function
+		finishLivonia()
+	}
+
+	
+	// UseEffect to handle csv-downlad if single-file.csv 
+	useEffect(() => {
+		if (isProcessingComplete) {
+				let project_id = "000";
+				console.log("final csvDataHolder: ", csvDataHolder);
+				downloadCSVdata(csvDataHolder, project_id);
+				setCsvDataHolder([]); 
+				setIsProcessingComplete(false);
+		}
+	}, [isProcessingComplete]);
+
+  	//method triggered when livonia function is done running
+	const finishLivonia = () => {
 		console.log("------------------------------------");
 		console.log("Livonia finished running!");
 		console.log("------------------------------------");
@@ -817,14 +825,11 @@ const Index = () => {
 		setShowSuccessLivoniaMessage(true);
 		setTimeout(() => {
 			setShowSuccessLivoniaMessage(false);
-		}, 2500);
-
+		}, 3000);
 		setSelectedData([]);
 		setSelectedIndices([]);
 		setUpdatedDataMessage([]);
-
 		setRefreshProjects(!refreshProjects);
-
 	}
 
 
