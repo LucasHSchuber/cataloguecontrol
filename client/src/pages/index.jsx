@@ -23,6 +23,7 @@ import {
 	apiUsernameDK,
 	apiUsernameDE,
 	apiPasswordGeneral,
+	ocrreserveToken,
 } from '../../../config/env.js';
 
 import clearFilter from '../assets/images/clear-filter.png';
@@ -42,10 +43,15 @@ const Index = () => {
 	// const [selectedData2, setSelectedData2] = useState([]);
 	const [updatedData, setUpdatedData] = useState([]);
 	const [updatedDataMessage, setUpdatedDataMessage] = useState([]);
+	const [updatedDataLength, setUpdatedDataLength] = useState(0);
+	const [updatedDataMessageLivonia, setUpdatedDataMessageLivonia] = useState([]);
+	const [updatedDataLivoniaLength, setUpdatedDataLivoniaLength] = useState(0);
 	const [uuidArray, setUuidArray] = useState([]);
 
 	const [isProcessingComplete, setIsProcessingComplete] = useState(false);
+
 	const [csvDataHolder, setCsvDataHolder] = useState([]);
+	const [isSeparateCSV, setIsSeparateCSV] = useState(false);
 
 	const [year, setYear] = useState('');
 	const [country, setCountry] = useState('');
@@ -63,6 +69,8 @@ const Index = () => {
 	const [showSuccessLivoniaMessage, setShowSuccessLivoniaMessage] = useState(false);
 
 	const [refreshProjects, setRefreshProjects] = useState(false);
+
+	const [triggerSource, setTriggerSource] = useState(false);
 
 	const [errorMessageLivoniaButton, setErrorMessageLivoniaButton] = useState(false);
 	const [errorMessageRunD2Button, setErrorMessageRunD2Button] = useState('');
@@ -123,7 +131,8 @@ const Index = () => {
 		console.log('-----------------------------');
 		setLoadingD2(true);
 		setUuidArray([]);
-		setUpdatedDataMessage([]);
+		setUpdatedDataMessageLivonia([]);
+
 		try {
 			// Using Promise.all to await all requests concurrently
 			await Promise.all(
@@ -266,11 +275,16 @@ const Index = () => {
 		} catch (error) {
 			console.log('Error in runD2 function: ', error);
 			return [];
-		}
+		} 
+		// finally {
+		// 	setLoadingD2(false);
+		// }
 	};
 
 	//fetch neo_projects and update responseArray
 	const fetchNeoProjectsForOrders = async (responseArray) => {
+		if (responseArray.length === 0) return; // Skip if responseArray is empty
+
 		try {
 			const response = await axios.get(`${baseURL}/api/neo_projects`);
 			// console.log('Fetched neo_projects:', response.data);
@@ -306,6 +320,8 @@ const Index = () => {
 
 	//fetch net_cataloue_projects and update responseArray
 	const fetchCatalogProjects = async (responseArray) => {
+		if (responseArray.length === 0) return; // Skip if responseArray is empty
+		
 		try {
 			// Fetch net_catalogue_projects data
 			const response = await axios.get(`${baseURL}/api/net_catalogue_projects`);
@@ -391,6 +407,7 @@ const Index = () => {
 							job_uuid: insertedOrders[0].job_uuid,
 							message: message,
 							insertedOrdersAmount: insertedOrdersAmount,
+							dateTime: new Date().toLocaleString(),
 							selectedData:
 								selectedData.find(
 									(data) =>
@@ -399,7 +416,7 @@ const Index = () => {
 								) || {},
 						};
 						console.log(messageObject);
-						// setUpdatedDataMessage((prevState) => [...prevState, messageObject]);
+
 						//update message with data to display on interface
 						setUpdatedDataMessage((prevState) => {
 							const existingIndex = prevState.findIndex(
@@ -426,6 +443,7 @@ const Index = () => {
 							job_uuid: newOrders[0].job_uuid,
 							message: message,
 							insertedOrdersAmount: 0,
+							dateTime: new Date().toLocaleString(),
 							selectedData:
 								selectedData.find(
 									(data) =>
@@ -538,17 +556,16 @@ const Index = () => {
 		console.log('---');
 		setProcessedCount(0);
 		setUpdatedData(selectedData);
-		setSelectedData([]);
-		setSelectedIndices([]);
-		// setCountry("")
-		// setYear("")
-		// setStatus('');
-		// setIsUnorderedList(true);
+		setUpdatedDataLivoniaLength(0);
+
 		setSearchString('');
-		setLoadingD2(false);
-
 		setRefreshProjects(!refreshProjects);
-
+		setTimeout(() => {
+			setLoadingD2(false);
+			setUpdatedDataLength((prevState) => prevState + selectedData.length);
+			setSelectedData([]);
+			setSelectedIndices([]);
+		}, 1000);
 		setShowD2SuccessMessage(true);
 		setTimeout(() => {
 			setShowD2SuccessMessage(false);
@@ -570,14 +587,12 @@ const Index = () => {
 		console.log('-----------------------------');
 		console.log('-----------------------------');
 		console.log('selectedData', data);
-		// setCsvDataHolder([]);
 
-		let csv_mode = 2;  
 		//loopa igenom selecteddata (data) och plocka ut varje tuppel från net_catalogue_orders
 		for (const item of data) {
 			let project_id = item.data.uuid;
 			console.log(`project_id of index ${item.index}:` , project_id);
-
+			let orders = [];
 			try {
 				const response = await axios.get(
 					`${baseURL}/api/net_catalogue_orders/livonia`,
@@ -588,7 +603,8 @@ const Index = () => {
 					}
 				); 
 				// console.log('Response', response.data);
-				const orders = response.data;       
+				orders = response.data;       
+				console.log('amount orders', orders.length);
 
 				//If orders are 0, print error
 				if (orders.length === 0) {
@@ -610,7 +626,7 @@ const Index = () => {
 
 				//Anropar REST API för att hämta OCR-nummer
 				let ocrArray = [];
-				let token = "78120e1d-5a19-11ef-a4a2-b496919a4466";
+				let token = ocrreserveToken;
 				try {
 					const data = {
 						portaluuid: item.data.portaluuid,
@@ -762,7 +778,7 @@ const Index = () => {
 					//pushing each order to csvData array
 					csvData.push([
 						ocrArray[i].slice(0,8),
-						"Co",
+						ocrArray[i],
 						order.price,
 						order.subjectname,
 						order.deliveryname,
@@ -773,12 +789,12 @@ const Index = () => {
 						order.team
 					])
 
-					if (csv_mode === 1 && orders.length + 1 === csvData.length) {
+					if (isSeparateCSV && orders.length + 1 === csvData.length) {
 						// console.log("csvData:", csvData);
 						downloadCSVdata(csvData, project_id);
 						csvData = [];
 					}
-					else if (csv_mode === 2 && orders.length + 1 === csvData.length) {
+					else if (!isSeparateCSV && orders.length + 1 === csvData.length) {
 						setCsvDataHolder(prevState => [...prevState, ...csvData]);
 					}
 
@@ -791,25 +807,29 @@ const Index = () => {
 
 			console.log(item.data.name + "done!");
 			console.log("------------------------------------");
+			const dataMessage = {
+				job_uuid: item.data.uuid,
+				insertedOrdersAmount: orders.length,
+				message: orders.length > 0 ? orders.length + " orders inserted successfully" : "Error: 0 orders inserted",
+				dateTime: new Date().toLocaleString(),
+				selectedData: item
+			}
+			console.log("dataMessage: ", dataMessage);
+			setUpdatedDataMessageLivonia((prevState) => [...prevState, dataMessage]);
 			
 		}
-
-		// Indicate processing is complete
-		console.log(csv_mode);
-		if (csv_mode === 2) {
+		// Indicate processing is complete if csv.file
+		if (!isSeparateCSV) {
 			setIsProcessingComplete(true);
 		}
-
 		//Finish Livonia function
 		finishLivonia()
 	}
 
-	
 	// UseEffect to handle csv-downlad if single-file.csv 
 	useEffect(() => {
 		if (isProcessingComplete) {
-				let project_id = "000";
-				console.log("final csvDataHolder: ", csvDataHolder);
+				let project_id = "0";
 				downloadCSVdata(csvDataHolder, project_id);
 				setCsvDataHolder([]); 
 				setIsProcessingComplete(false);
@@ -821,17 +841,24 @@ const Index = () => {
 		console.log("------------------------------------");
 		console.log("Livonia finished running!");
 		console.log("------------------------------------");
-		setLoadingLivonia(false);
+		setUpdatedDataLength(0);
+		
+		setTimeout(() => {
+			setLoadingLivonia(false);
+			setUpdatedDataLivoniaLength((prevState) => prevState + selectedData.length);
+			setSelectedData([]);
+			setSelectedIndices([]);
+			setUpdatedDataMessage([]);
+			setTriggerSource(false);
+			setIsSeparateCSV(false);
+		}, 1000);
 		setShowSuccessLivoniaMessage(true);
 		setTimeout(() => {
 			setShowSuccessLivoniaMessage(false);
 		}, 3000);
-		setSelectedData([]);
-		setSelectedIndices([]);
-		setUpdatedDataMessage([]);
+
 		setRefreshProjects(!refreshProjects);
 	}
-
 
 	//method to retrieve invoice number
 	async function getInvoiceNumber(portaluuid) {
@@ -860,12 +887,10 @@ const Index = () => {
 		const now = new Date().toISOString();
 		const formattedDateTime = formatDateTime(now).replace(/:/g, '-'); 
 		link.setAttribute("download", `csvData-projectid:${project_id}-date:${formattedDateTime}.csv`);
-		
 		document.body.appendChild(link);
-	
 		link.click();
 		document.body.removeChild(link);
-
+		//method to save csv.file on server
 		saveCSVOnServer(csvContent, project_id);
 	}
 
@@ -971,7 +996,8 @@ const Index = () => {
 		setSelectedIndices([]);
 		setUuidArray([]);
 		setSelectedData([]);
-		setUpdatedDataMessage([]);
+		// setUpdatedDataMessage([]);
+		// setUpdatedDataMessageLivonia([]);
 		setShowRemovedRowMessage(true);
 		setTimeout(() => {
 			setShowRemovedRowMessage(false);
@@ -1051,11 +1077,15 @@ const Index = () => {
 		setSearchString('');
 		setIsUnorderedList(true);
 	};
-
 	const handleCheckboxChange = () => {
 		setIsUnorderedList(!isUnorderedList);
 		console.log(isUnorderedList);
 	};
+
+	
+	const handleSCVCheckboxChange = (e) => {
+        setIsSeparateCSV(e.target.checked);
+    };
 
 
 	
@@ -1064,8 +1094,9 @@ const Index = () => {
 			{(loadingD2 || loadingLivonia) && (
 					<div className="loader-D2">
 							<h6 className="loader-text">
-									Please wait while {loadingD2 ? "D2" : "Livonia"} is running...
+									Please wait while {loadingD2 ? "D2" : "Livonia"} is running... 
 							</h6>
+							{loadingD2 ? <p>{updatedDataMessage.length}/{selectedData.length + updatedDataLength} </p> : <p> {updatedDataMessageLivonia.length}/{triggerSource ? updatedDataMessage.length + updatedDataLivoniaLength : selectedData.length + updatedDataLivoniaLength} </p>}
 							<RingLoader className="loader-spinner" color={'#123abc'} size={50} />
 					</div>
 			)}
@@ -1256,8 +1287,8 @@ const Index = () => {
 						)}
 					</table>
 				</div>
-
-				<div
+				{/* amount selcted and clear all button		 */}
+				{/* <div
 					className="mt-3 d-flex justify-content-center"
 					style={{ textAlign: 'center' }}
 				>
@@ -1273,23 +1304,20 @@ const Index = () => {
 							</div>
 						)}
 					</div>
-				</div>
+				</div> */}
 
-				{/* updated data table */}
-				{updatedDataMessage && updatedDataMessage.length > 0 && (
+				{/* updated data table (LIVONIA AND D2) */}
+				{((updatedDataMessage && updatedDataMessage.length > 0) || (updatedDataMessageLivonia && updatedDataMessageLivonia.length > 0)) && (
 					<div className="mt-4 updated-data-box">
-						{/* <h6><b>Ran by D2:</b></h6> */}
-						{/* <h6><b>{updatedDataMessage}</b></h6> */}
-						{/* {updatedDataMessage.map((data) => (
-						<div>
-							<h6>{data.insertedOrdersAmount}</h6>
-							<h6>{data.message}</h6>
-							<h6>{data.job_uuid}</h6>
-						</div>
-					))} */}
+						<h6 style={{ textDecoration: "underline" }}><b>{updatedDataMessage.length > 0 ? "D2 log:" : updatedDataMessageLivonia.length > 0 ? "Livonia log:" : ""}</b></h6>
 						<button
 							style={{ float: 'right', border: 'none' }}
-							onClick={() => setUpdatedDataMessage([])}
+							onClick={() => {
+								setUpdatedDataMessage([]);
+								setUpdatedDataMessageLivonia([]);
+								setUpdatedDataLength(0);
+								setUpdatedDataLivoniaLength(0);
+							  }}
 							className="remove-selected-data-button"
 						>
 							<FontAwesomeIcon icon={faTimes} title="Remove list" />
@@ -1297,17 +1325,30 @@ const Index = () => {
 						<table className="updated-data-table">
 							<thead>
 								<tr>
-									<th>Project ({updatedDataMessage.length})</th>
-									<th>D2</th>
-									<th>Orders</th>
-									<th>New orders</th>
-									<th></th>
-									<th>Inserted</th>
-									<th>Msg</th>
+									{updatedDataMessage && updatedDataMessage.length > 0 ? (
+									<>
+										<th>Project ({updatedDataMessage.length})</th>
+										<th>D2</th>
+										<th>Orders</th>
+										<th>New orders</th>
+										<th></th>
+										<th>Inserted</th>
+										<th>Msg</th>
+										<th>Completed</th>
+									</>
+									) : updatedDataMessageLivonia && updatedDataMessageLivonia.length > 0 ? (
+									<>
+										<th>Project ({updatedDataMessageLivonia.length})</th>
+										<th>Inserted orders</th>
+										<th></th>
+										<th>Msg</th>
+										<th>Completed</th>
+									</>
+									) : null}
 								</tr>
 							</thead>
 							<tbody className="selected-data-table-body">
-								{updatedDataMessage.map((data) => (
+								{updatedDataMessage && updatedDataMessage.map((data) => (
 									<tr key={data.selectedData.data.uuid}>
 										<td data-uuid={data.selectedData.data.uuid}>
 											{data.selectedData.data.name}
@@ -1334,27 +1375,62 @@ const Index = () => {
 										</td>
 										<td>{data.insertedOrdersAmount}</td>
 										<td>{data.insertedOrdersAmount} {data.message}</td>
+										<td>at {data.dateTime.substring(11,19).replace(/-/g, '/')}</td>
+									</tr>
+								))}
+								{updatedDataMessageLivonia && updatedDataMessageLivonia.map((data) => (
+									<tr key={data.selectedData.data.uuid}>
+										<td data-uuid={data.selectedData.data.uuid}>
+											{data.selectedData.data.name}
+										</td>
+										<td>
+											{data.insertedOrdersAmount} 
+										</td>
+										<td>
+											<button className="mr-2 table-button">
+												Open in EBSS
+											</button>
+										</td>
+										<td>{data.message}</td>
+										<td>at {data.dateTime.substring(11,19).replace(/-/g, '/')}</td>
 									</tr>
 								))}
 							</tbody>
 						</table>
 						<div className="mt-3">
 							<hr></hr>
-							{/* <button
+							<button
 								className="mr-2 button runD2"
-								disabled={updatedDataMessage.some((item) => item.insertedOrdersAmount > 0)}
-								title={updatedDataMessage.some((item) => item.insertedOrdersAmount > 0 ? "At least one project has been run by D2" : "Run D2")}
+								disabled={
+									updatedDataMessage.some((item) => item.insertedOrdersAmount > 0) ||
+									updatedDataMessageLivonia.length > 0
+								}		
 							>
 								Run D2
-							</button> */}
+							</button>
 							<button className="mr-2 button">Send to Engine</button>
 							<button
 								className="button"
-								disabled={updatedDataMessage.some((item) => item.insertedOrders <= 0)}
-								onClick={() => runLivonia(updatedDataMessage.map(data => data.selectedData))}
+								disabled={
+									updatedDataMessageLivonia.length > 0
+								}								
+								onClick={() => {
+									setTriggerSource(true);
+									const dataToSend = updatedDataMessage.length > 0 ? updatedDataMessage : updatedDataMessageLivonia;
+									runLivonia(dataToSend.map(data => data.selectedData));
+								}}
 							>
 								Livonia
 							</button>
+							<div className='mt-2'>
+								<input
+									type="checkbox"
+									id="separateCSVCheckbox"
+									checked={isSeparateCSV}
+									onChange={handleSCVCheckboxChange}
+								/>
+								<label className='ml-1' htmlFor="separateCSVCheckbox">Livonia: Separate CSV files</label>
+							</div>
 						</div>
 					</div>
 				)}
@@ -1369,7 +1445,12 @@ const Index = () => {
 					<table className="selected-data-table">
 						<thead>
 							<tr>
-								<th></th>
+								<th 
+									className='clearall-link'
+									onClick={ClearAllSelected}
+									>	
+									Clear all
+								</th>
 								<th>Project ({selectedData.length})</th>
 								<th>D2</th>
 								<th>Orders</th>
@@ -1445,6 +1526,15 @@ const Index = () => {
 						>
 							Livonia
 						</button>
+						<div className='mt-2'>
+							<input
+								type="checkbox"
+								id="separateCSVCheckbox"
+								checked={isSeparateCSV}
+								onChange={handleSCVCheckboxChange}
+							/>
+							<label className='ml-1' htmlFor="separateCSVCheckbox">Livonia: Separate CSV files</label>
+						</div>
 						{errorMessageLivoniaButton && (
 							<div>
 								<h6

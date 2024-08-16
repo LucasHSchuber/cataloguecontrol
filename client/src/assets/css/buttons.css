@@ -49,9 +49,25 @@
     border:none;
     transition: 0.2s;
 }
-.clearall-button:hover{
+/* .clearall-button-2{
+    padding: 0.4em 0.8em;
+    border-radius: 4px;
+    background-color: rgb(98, 98, 98);
+    color: white;
+    border:none;
+    transition: 0.2s;
+} */
+.clearall-button:hover {
     background-color: black;
     cursor: pointer;
+}
+.clearall-link{
+    text-decoration: underline;
+    cursor: pointer;   
+    transition: 0.3s;
+}
+.clearall-link:hover{
+    color: rgb(128, 128, 128);
 }
 
 .clear-filter-button{
