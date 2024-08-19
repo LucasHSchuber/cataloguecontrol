@@ -1,10 +1,10 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 // import Index from './pages/index';
 import Index from './pages/index';
-// import "./App.css";
+import Ebbs from './pages/ebss';
 
-import './assets/css/main.css';
-import './assets/css/buttons.css';
+
+import "./assets/css/main.css"
 
 function App() {
   return (
@@ -12,7 +12,12 @@ function App() {
       <div className="content">
         <div className="route-layout">
           <Routes>
-            <Route path="/" element={<Index />} />
+            {/* <Route path="/" element={<Index />} /> */}
+            <Route path="/" element={<Navigate to="/catalogcontrol" replace />} />
+            {/* Define the catalogcontrol route */}
+            <Route path="/catalogcontrol" element={<Index />} />
+
+            <Route path="/ebss" element={<Ebbs />} />
           </Routes>
         </div>
       </div>

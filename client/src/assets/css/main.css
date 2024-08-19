@@ -1,4 +1,4 @@
-/* NewsDetail.css */
+/* MAIN */
 
 .page-wrapper {
   padding: 8em 15em 24em 15em; 
@@ -7,6 +7,25 @@
   font-size: 0.7em;
   font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
 }
+
+/* alert meassage */
+.alert-message{
+  z-index: 20;
+  padding: 0.6em 1.8em;
+  font-size: 0.7em;
+  font-weight: 500;
+  color: rgb(40, 40, 40) !important;
+  border-radius: 5px;
+  color: white;
+  position: fixed;
+  bottom: 22em;
+  left: 1em;
+}
+
+
+
+
+ /* ------------------ CATALOG CONTROL ------------------ */
 
 .filter-container {
   /* position: fixed; */
@@ -132,16 +151,45 @@
 }
 
 
-/* alert meassage */
-.alert-message{
-  z-index: 20;
-  padding: 0.6em 1.8em;
-  font-size: 0.7em;
-  font-weight: 500;
-  color: rgb(40, 40, 40) !important;
-  border-radius: 5px;
-  color: white;
-  position: fixed;
-  bottom: 22em;
-  left: 1em;
+
+
+/* ------------------ EBSS ------------------ */
+
+.ebss-selectlist{
+  width: 20em;
+  height: 2.4em;
+  margin: 0 0 0 0.5em;
+
 }
+
+.custom-checkbox {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  appearance: none;
+  background-color: white;
+  border: 2px solid #ccc; 
+  border-radius: 5px; 
+  cursor: pointer;
+  outline: none;
+  transition: background-color 0.2s, border-color 0.2s; 
+  margin: 0 0 0 0.5em;
+}
+
+.custom-checkbox:checked {
+  background-color: black;
+  border-color: black;    
+}
+
+.custom-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 4.5px;
+  width: 8px;
+  height: 5px;
+  border: solid white;
+  border-width: 0 0 2px 2px;
+  transform: rotate(-45deg);
+}
+

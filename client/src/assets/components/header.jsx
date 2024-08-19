@@ -14,11 +14,11 @@ const Header = () => {
               Catalog control
             </Link>
           </li>
-          {/* <li>
-            <Link to="/recentshot" className="navlink">
-              Recent shot
+          <li>
+            <Link to="/ebss" className="navlink">
+              EBSS
             </Link>
-          </li> */}
+          </li>
         </ul>
       </nav>
     </header>

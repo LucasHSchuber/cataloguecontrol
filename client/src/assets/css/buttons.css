@@ -13,6 +13,9 @@
     background-color: rgb(228, 228, 228);
 }
 
+
+/* ---------------- CATALOG CONTROL --------------- */
+
 .table-button{
     border: 1px solid rgb(217, 217, 217);
     padding: 0.2em 1em;
@@ -82,3 +85,6 @@
 .clear-filter-button:hover{
     background-color: rgb(228, 228, 228);
 }
+
+
+/* ---------------- EBSS --------------- */

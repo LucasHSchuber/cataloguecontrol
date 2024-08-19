@@ -26,7 +26,11 @@ import {
 	ocrreserveToken,
 } from '../../../config/env.js';
 
+//importet images
 import clearFilter from '../assets/images/clear-filter.png';
+
+//imported css files
+import "../assets/css/buttons.css"
 
 const Index = () => {
 	// Define state to store fetched data
