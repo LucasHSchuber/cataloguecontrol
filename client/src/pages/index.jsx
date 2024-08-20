@@ -1,5 +1,6 @@
 // src/pages/NewsDetail.jsx
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios, { Axios } from 'axios';
 
 import { library } from '@fortawesome/fontawesome-svg-core';
@@ -79,6 +80,8 @@ const Index = () => {
 	const [errorMessageLivoniaButton, setErrorMessageLivoniaButton] = useState(false);
 	const [errorMessageRunD2Button, setErrorMessageRunD2Button] = useState('');
 
+	//import useNavigate
+	const navigate = useNavigate();
 
 
 	// method to fetch all projects from database
@@ -1092,6 +1095,12 @@ const Index = () => {
     };
 
 
+	//open project in EBSS
+	const openInEBSS = (uuid) => {
+		console.log("uuid: ", uuid);
+		navigate('/ebss', { state: { uuid } });  // Send uuid via state
+	}
+
 	
 	return (
 		<div className="wrapper">
@@ -1494,7 +1503,7 @@ const Index = () => {
 										{data.data.D2 ? data.data.new_orders : data.data.num_orders}
 									</td>
 									<td>
-										<button className="mr-2 table-button">Open in EBSS</button>
+										<button className="mr-2 table-button" onClick={() => openInEBSS(data.data.uuid)}>Open in EBSS</button>
 									</td>
 									{/* <td>
 										<button className="mr-2 table-button">Send to Engine</button>
