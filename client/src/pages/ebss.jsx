@@ -3,12 +3,19 @@ import { useLocation } from 'react-router-dom';
 
 import axios from 'axios';
 
+import {
+	baseURL,
+} from '../../../config/env.js';
+
+
 const Ebss = () => {
+
     const location = useLocation();
-    const { uuid } = location.state || {};  // Retrieve uuid from state
-  
+    const query = new URLSearchParams(location.search);
+    const uuid = query.get('uuid');
+
     useEffect(() => {
-      console.log("Received UUID:", uuid);
+        console.log("Received UUID:", uuid);
     }, [uuid]);
 
     // State variables for each form field
@@ -20,176 +27,290 @@ const Ebss = () => {
     const [logoFile, setLogoFile] = useState(null);
     const [productionActive, setProductionActive] = useState(false);
 
-    //variables for ducoat
+    //variables 
     const [allowSEF, setAllowSEF] = useState(false);
     const [allowReduced, setAllowReduced] = useState(false);
     const [overridePrice, setOverridePrice] = useState(false); //variable for duocat & photobook
     const [overrideReducedPrice, setOverrideReducedPrice] = useState(false);
-    const [overrideProductName, setOverrideProductName] = useState(false);
+    const [overrideProjectName, setOverrideProjectName] = useState(false);
     const [newPrice, setNewPrice] = useState('');
     const [reducedPrice, setReducedPrice] = useState('');
-    const [newProductName, setNewProductName] = useState('');
-    
+    const [newProjectName, setNewProjectName] = useState('');
 
-    //variables for school photobook
+    const [formError, setFormError] = useState({
+        productType: false,
+        productionType: false,
+        template: false,
+        catalogueFile: false,
+        logoActive: false,
+        logoFile: false,
+        productionActive: false,
+        allowSEF: false,
+        allowReduced: false,
+        overridePrice: false,
+        overrideReducedPrice: false,
+        overrideProjectName: false,
+        newPrice: false,
+        reducedPrice: false,
+        newProjectName: false
+    });
 
-    
 
   // Handle file changes
   const handleFileChange = (event, setFile) => {
     setFile(event.target.files[0]);
-    console.log(event)
+    console.log(event);
   };
 
   // Handle form submit
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    console.log(event)
 
-    const status = formCheck();
+    formCheck(); 
 
-    console.log({
-      uuid,  
-      productType,
-      productionType,
-      template,
-      catalogueFile,
-      logoActive,
-      logoFile,
-      productionActive,
-      allowSEF,
-      allowReduced,
-      overridePrice,
-      overrideProductName,
-      overrideReducedPrice,
-      newPrice,
-      reducedPrice,
-      newProductName
-    });
+    const hasError = Object.values(formError).some((error) => error === true)
+    if (hasError){
+        console.log("Form submission cancelled due to errors.");
+        console.log(hasError)
+        console.log(formError)
+        return; 
+    }
+
+    const jsonData = JSON.stringify({
+        logoActive: logoActive,
+        allowSEF: allowSEF,
+        allowReduced: allowReduced,
+        overridePrice: overridePrice,
+        overrideProjectName: overrideProjectName,
+        overrideReducedPrice: overrideReducedPrice,
+        newPrice: newPrice,
+        reducedPrice: reducedPrice,
+        newProjectName: newProjectName
+    })
+    console.log("jsonData: ", jsonData)
+
+    const data = {
+        project_uuid: uuid,
+        product_type: productType,
+        production_type: productionType,
+        template_name: template,
+        production_active: productionActive ? 1 : 0,
+        data: jsonData
+    };
+    console.log("data: ", data);
+
+    try {
+        const response = await axios.post(`${baseURL}/api/pdfgen_ebss`, data, {
+            headers: {
+                'Content-Type': 'application/json', 
+            },
+         })
+          console.log('Successfully submitted form:', response.data);
+    } catch (error) {
+        console.log('Error when submitted form:', error);
+        console.log('Error: ', error.response.data.error);
+
+    }
   };
 
   //checking values in form 
   const formCheck = () => {
-    if (productType === "duocat"){
-        if(productionType === ""){
+    if (productType === "duocat") { // form check for duocat
+        if (productionType === "") {
             console.log("ALERT missing productiontype");
+            setFormError((prevState) => ({ ...prevState, productionType: true }));
         }
-        if(template === ""){
+        if (template === "") {
             console.log("ALERT missing template");
+            setFormError((prevState) => ({ ...prevState, template: true }));
         }
         if (allowReduced && overrideReducedPrice && reducedPrice === "") {
             console.log("ALERT missing overrideprice");
+            setFormError((prevState) => ({ ...prevState, reducedPrice: true }));
         }
-        if(!catalogueFile){
+        if (!catalogueFile) {
             console.log("ALERT missing catalogue file");
-        }   
-        if(overrideProductName && newProductName === ""){
-            console.log("ALERT missing catalogue new product name");
-        }   
-        if(overridePrice && newPrice === ""){
+            setFormError((prevState) => ({ ...prevState, catalogueFile: true }));
+        }
+        if (overrideProjectName && newProjectName === "") {
+            console.log("ALERT missing new product name");
+            setFormError((prevState) => ({ ...prevState, newProjectName: true }));
+        }
+        if (overridePrice && newPrice === "") {
             console.log("ALERT missing new price");
-        }   
-    } else if (productType === "photobook"){
-        if(productionType === ""){
+            setFormError((prevState) => ({ ...prevState, newPrice: true }));
+        }
+    } else if (productType === "photobook") { // form check for photobook
+        if (productionType === "") {
             console.log("ALERT missing productiontype");
+            setFormError((prevState) => ({ ...prevState, productionType: true }));
         }
-        if(template === ""){
+        if (template === "" || !template) {
             console.log("ALERT missing template");
+            setFormError((prevState) => ({ ...prevState, template: true }));
         }
-        if(!catalogueFile){
+        if (!catalogueFile) {
             console.log("ALERT missing catalogue file");
-        }   
-        if(overridePrice && newPrice === ""){
+            setFormError((prevState) => ({ ...prevState, catalogueFile: true }));
+        }
+        if (overridePrice && newPrice === "") {
             console.log("ALERT missing new price");
-        }   
-    } else if (productType === "schoolcatalogue"){
-        if(productionType === ""){
+            setFormError((prevState) => ({ ...prevState, newPrice: true }));
+        }
+    } else if (productType === "schoolcatalogue") { // form check for school catalogue
+        if (productionType === "") {
             console.log("ALERT missing productiontype");
+            setFormError((prevState) => ({ ...prevState, productionType: true }));
         }
-        if(template === ""){
+        if (template === "") {
             console.log("ALERT missing template");
+            setFormError((prevState) => ({ ...prevState, template: true }));
         }
-        if(!catalogueFile){
+        if (!catalogueFile) {
             console.log("ALERT missing catalogue file");
-        }   
+            setFormError((prevState) => ({ ...prevState, catalogueFile: true }));
+        }
     }
   };
 
+    //remove alert-border
+    useEffect(() => {
+        // If the user selects a valid product type, remove the error border
+        if (productType !== "") {
+            setFormError((prevState) => ({ ...prevState, productType: false }));
+        }
+        if (productionType !== "") {
+            setFormError((prevState) => ({ ...prevState, productionType: false }));
+        }
+        if (template !== "") {
+            setFormError((prevState) => ({ ...prevState, template: false }));
+        }
+        if (catalogueFile) {
+            setFormError((prevState) => ({ ...prevState, catalogueFile: false }));
+        }
+        if (reducedPrice !== "") {
+            setFormError((prevState) => ({ ...prevState, reducedPrice: false }));
+        }
+        if (newProjectName !== "") {
+            setFormError((prevState) => ({ ...prevState, newProjectName: false }));
+        }
+        if (newPrice !== "") {
+            setFormError((prevState) => ({ ...prevState, newPrice: false }));
+        }
+        if (reducedPrice !== "") {
+            setFormError((prevState) => ({ ...prevState, reducedPrice: false }));
+        }
+        if (newProjectName !== "") {
+            setFormError((prevState) => ({ ...prevState, newProjectName: false }));
+        }
+    }, [productType, productionType, template, reducedPrice, newProjectName, newPrice, reducedPrice, newProjectName]);
+        
+
+
   useEffect(() => {
-    console.log(productType)
-  }, [productType]);
+    console.log(productType);
+    console.log("FormError:", formError);
+  }, [productType, formError]);
 
   return (
     <div className="page-wrapper">
-      <h5>EBSS</h5>
+      <h4 className='' style={{ fontWeight: "700", textDecoration: "underline" }}>EBSS</h4>
+      <h6 className='mb-5' style={{ fontSize: "1.1em", fontWeight: "400" }}>Lorem impus text place some text here</h6>
 
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="productType">Product Type</label>
-          <select
-            className='ebss-selectlist'
-            id="productType"
-            value={productType}
-            onChange={(e) => setProductType(e.target.value)}
-          >
-            <option value="">Select Product Type</option>
-            <option value="duocat">DuoCat</option>
-            <option value="schoolcatalogue">School Catalogue</option>
-            <option value="photobook">PhotoBook</option>
-          </select>
+      <form onSubmit={handleSubmit} className='ebss-form'>
+
+        <div className="form-group d-flex">
+             <div className='label-box'>
+                    <label className='ebss-label' htmlFor="productType">Product Type</label>
+                    <p htmlFor="template">Choose a product type</p>
+            </div>
+            <div className='choice-box'>
+                <select
+                    className={`ebss-selectlist ${formError.productType ? 'alert-select' : ''}`}
+                    id="productType"
+                    value={productType}
+                    onChange={(e) => setProductType(e.target.value)}
+                >
+                    <option value="">Select Product Type</option>
+                    <option value="duocat">DuoCat</option>
+                    <option value="schoolcatalogue">School Catalogue</option>
+                    <option value="photobook">PhotoBook</option>
+                </select>
+            </div>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="productionType">Production Type</label>
-          <select
-            className='ebss-selectlist'
-            id="productionType"
-            value={productionType}
-            onChange={(e) => setProductionType(e.target.value)}
-          >
-            <option value="">Select Production Type</option>
-            <option value="internal">Internal</option>
-            <option value="external">External</option>
-          </select>
-        </div>
-
-        <hr className='mt-4'></hr>
-
+        <hr className='mt-4 mb-2' style={{ border: "1px solid gray" }}></hr>
+       
         {productType !== "" && (
-        <h6 className='mb-3' >{productType.charAt(0).toUpperCase() + productType.slice(1)} ({productionType ? productionType : "?"})</h6>
+           <div className='mt-3 mb-5'>
+                <h5 style={{ fontWeight: "700", fontSize: "1.2em", }} >Product type: {productType.charAt(0).toUpperCase() + productType.slice(1)}</h5>
+                <h6 style={{ fontSize: "1.1em", fontWeight: "400" }}>Enter data for product type {productType}  </h6>
+            </div> 
         )}
 
         {productType !== "" && (
         <div>
-            <div className="form-group">
-            <label htmlFor="template">Template</label>
-            <select
-                className='ebss-selectlist'
-                id="template"
-                value={template}
-                onChange={(e) => setTemplate(e.target.value)}
-            >
-                <option value="">Select Template</option>
-                {productType === "duocat" && (
-                    <option value="playercards">Playercards</option>
-                )}
-            </select>
+            <div className="form-group d-flex">
+                <div className='label-box'>
+                    <label className='ebss-label' htmlFor="productionType">Production Type</label>
+                    <p htmlFor="template">Set internal or external production type</p>
+                </div>
+                <div className='choice-box'>
+                    <select
+                        className={`ebss-selectlist ${formError.productionType ? 'alert-select' : ''}`}
+                        id="productionType"
+                        value={productionType}
+                        onChange={(e) => setProductionType(e.target.value)}
+                    >
+                        <option value="">Select Production Type</option>
+                        <option value="internal">Internal</option>
+                        <option value="external">External</option>
+                    </select>
+                </div>
             </div>
+            <hr></hr>
 
-            <div className="form-group">
-            <label htmlFor="catalogueFile">Catalogue File</label>
-            <input
-                className='ml-2'
-                id="catalogueFile"
-                type="file"
-                accept=".pdf"
-                onChange={(e) => handleFileChange(e, setCatalogueFile)}
-            />
+            <div className="form-group d-flex">
+                <div className='label-box'>
+                    <label className='ebss-label' htmlFor="template">Template</label>
+                    <p htmlFor="template">Chooce template for selecting product type</p>
+                </div>
+                <div className='choice-box'>
+                    <select
+                        className={`ebss-selectlist ${formError.template ? 'alert-select' : ''}`}
+                        id="template"
+                        value={template}
+                        onChange={(e) => setTemplate(e.target.value)}
+                    >
+                        <option value="">Select Template</option>
+                        {productType === "duocat" && (
+                            <option value="playercards">Playercards</option>
+                        )}
+                    </select>
+                </div>
             </div>
+            <hr></hr>
+
+            <div className="form-group d-flex">
+                 <div className='label-box'>
+                    <label className='ebss-label' htmlFor="catalogueFile">Catalogue File</label>
+                    <p htmlFor="template">Chooce a catalogue file for the product</p>
+                </div>
+                <div className='choice-box'>
+                    <input
+                        className='ml-2'
+                        id="catalogueFile"
+                        type="file"
+                        accept=".pdf"
+                        onChange={(e) => handleFileChange(e, setCatalogueFile)}
+                    />
+                </div>
+            </div>
+            <hr></hr>
+
 
             {productType === "duocat" && (   
-            <div className="form-group">
-            <label htmlFor="logoActive" className="custom-checkbox-label">Logo Active</label>
+            <div className="">
             <input
                 className="custom-checkbox"
                 id="logoActive"
@@ -197,11 +318,12 @@ const Ebss = () => {
                 checked={logoActive}
                 onChange={(e) => setLogoActive(e.target.checked)}
             />
+            <label htmlFor="logoActive" className="custom-checkbox-label">Logo Active</label>
             </div>
             )}
 
             {logoActive && (
-            <div className="form-group">
+            <div className="">
                 <label htmlFor="logoFile">Logo File</label>
                 <input
                 className='ml-2'
@@ -212,17 +334,6 @@ const Ebss = () => {
                 />
             </div>
             )}
-
-            <div className="form-group">
-            <label htmlFor="productionActive" className="custom-checkbox-label">Production Active</label>
-            <input
-                className="custom-checkbox"
-                id="productionActive"
-                type="checkbox"
-                checked={productionActive}
-                onChange={(e) => setProductionActive(e.target.checked)}
-            />
-            </div>
             </div>
             )}
 
@@ -230,8 +341,7 @@ const Ebss = () => {
             {productType === "duocat" && (
             <div>
             {/* Allow SEF Checkbox */}
-            <div className="form-group">
-                <label htmlFor="allowSEF">Allow SEF</label>
+            <div className="">
                 <input
                 className="custom-checkbox"
                 id="allowSEF"
@@ -239,11 +349,11 @@ const Ebss = () => {
                 checked={allowSEF}
                 onChange={(e) => setAllowSEF(e.target.checked)}
                 />
+            <label htmlFor="allowSEF">Allow SEF</label>
             </div>
 
             {/* Allow Reduced Checkbox */}
-            <div className="" style={{ marginBottom: allowReduced ? "0" : "1em" }}>
-            <label htmlFor="allowReduced">Allow Reduced</label>
+            <div className="" style={{ marginBottom: allowReduced ? "0" : "0" }}>
                 <input
                 className="custom-checkbox"
                 id="allowReduced"
@@ -251,12 +361,12 @@ const Ebss = () => {
                 checked={allowReduced}
                 onChange={(e) => setAllowReduced(e.target.checked)}
                 />
+            <label htmlFor="allowReduced">Allow Reduced</label>
             </div>
 
             {/* Override Reduced Price Checkbox & Number Input (Only show if Allow Reduced is checked) */}
             {allowReduced && (
-                <div className="form-group">
-                <label htmlFor="overrideReducedPrice">Override Reduced Price</label>
+                <div className="">
                 <input
                     className="custom-checkbox"
                     id="overrideReducedPrice"
@@ -264,10 +374,11 @@ const Ebss = () => {
                     checked={overrideReducedPrice}
                     onChange={(e) => setOverrideReducedPrice(e.target.checked)}
                 />
+                <label htmlFor="overrideReducedPrice">Override Reduced Price</label>
                 {overrideReducedPrice && (
                     <input
                     type="number"
-                    className="reduced-price-input"
+                    className={`form-input ${formError.reducedPrice ? 'alert-select' : ''}`}
                     value={reducedPrice}
                     onChange={(e) => setReducedPrice(e.target.value)}
                     placeholder="Enter Reduced Price"
@@ -277,21 +388,21 @@ const Ebss = () => {
             )}
 
             {/* Override Product Name Checkbox & Number Input */}
-            <div className="form-group">
-                <label htmlFor="overrideProductName">Override Product Name</label>
+            <div className="">
                 <input
                 className="custom-checkbox"
-                id="overrideProductName"
+                id="overrideProjectName"
                 type="checkbox"
-                checked={overrideProductName}
-                onChange={(e) => setOverrideProductName(e.target.checked)}
+                checked={overrideProjectName}
+                onChange={(e) => setOverrideProjectName(e.target.checked)}
                 />
-                {overrideProductName && (
+                <label htmlFor="overrideProjectName">Override Product Name</label>
+                {overrideProjectName && (
                 <input
                     type="text"
-                    className="new-product-name-input"
-                    value={newProductName}
-                    onChange={(e) => setNewProductName(e.target.value)}
+                    className={`form-input ${formError.newProjectName ? 'alert-select' : ''}`}
+                    value={newProjectName}
+                    onChange={(e) => setNewProjectName(e.target.value)}
                     placeholder="Enter Product Name"
                 />
                 )}
@@ -301,8 +412,7 @@ const Ebss = () => {
         )}
 
         {(productType === "duocat" || productType === "photobook") && (
-            <div className="form-group">
-                <label htmlFor="overridePrice">Override Price</label>
+            <div className="">
                 <input
                     className="custom-checkbox"
                     id="overridePrice"
@@ -310,10 +420,11 @@ const Ebss = () => {
                     checked={overridePrice}
                     onChange={(e) => setOverridePrice(e.target.checked)}
                 />
+                <label htmlFor="overridePrice">Override Price</label>
                 {overridePrice && (
                     <input
                         type="number"
-                        className="price-input"
+                        className={`form-input ${formError.newPrice ? 'alert-select' : ''}`}
                         value={newPrice}
                         onChange={(e) => setNewPrice(e.target.value)}
                         placeholder="Enter Price"
@@ -322,15 +433,22 @@ const Ebss = () => {
             </div>
         )}
 
+        {productType !== "" && (
+        <div className="mt-3">
+        <input
+            className="custom-checkbox"
+            id="productionActive"
+            type="checkbox"
+            checked={productionActive}
+            onChange={(e) => setProductionActive(e.target.checked)}
+        />
+        <label htmlFor="productionActive" className="custom-checkbox-label">Production Active</label>
+        </div>
+        )}
     
 
-
-        {/* ------------------------------- VARIABLES FOR SCHOOL CATALOGUE ------------------------------- */}
-
-        {/* ------------------------------- VARIABLES FOR SCHOOL PHOTOBOOK ------------------------------- */}
-
         <button
-            className='button' 
+            className='button my-4' 
             type="submit"
             disabled={productType === ""}
         >Save

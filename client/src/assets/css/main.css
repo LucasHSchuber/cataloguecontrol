@@ -5,7 +5,8 @@
   width: 100%;
   overflow: hidden;
   font-size: 0.7em;
-  font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+  background-color: rgb(252, 252, 252);
+  /* font-family:; */
 }
 
 /* alert meassage */
@@ -21,6 +22,18 @@
   bottom: 22em;
   left: 1em;
 }
+
+/* .alert-error {
+  border: 2px solid red;
+  padding: 5px;
+} */
+
+.alert-select {
+  border: 1px solid red;
+  border-color: red !important;
+  background-color: #fff7f7 !important;
+}
+
 
 
 
@@ -155,13 +168,43 @@
 
 /* ------------------ EBSS ------------------ */
 
-.ebss-selectlist{
-  width: 20em;
-  height: 2.4em;
-  margin: 0 0 0 0.5em;
-
+.ebss-form{
+  font-size: 1.1em;
 }
-
+.form-group{
+  margin: 1em 0 1em 1em;
+}
+.label-box{
+ width: 40em;
+}
+.choice-box{
+  width: 20em;
+}
+.ebss-label{
+  font-size: 1.1em;
+  font-weight: 700;
+}
+.variables-box{
+  background-color: white;
+  /* width: 30em; */
+  padding: 3em;
+  border-radius: 10px;
+  border: 1px solid rgb(215, 215, 215);
+}
+.ebss-selectlist{
+  width: 30em;
+  height: 3em;
+  margin: 0 0 0 0.5em;
+  padding-left: 0.2em;
+  border-radius: 5px;
+  font-weight: 500;
+}
+.form-input{
+  width: 20em;
+  height: 2em;
+  margin: 0 0 0 0.5em;
+  padding-left: 0.4em !important;
+}
 .custom-checkbox {
   position: relative;
   width: 15px;

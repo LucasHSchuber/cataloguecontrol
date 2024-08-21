@@ -1026,7 +1026,7 @@ const Index = () => {
 		);
 	};
 
-		//-------- SORTING AND SEARCHING TABLE --------
+	//-------- SORTING AND SEARCHING TABLE --------
 	// handle sorting
 	const handleSort = (column) => {
 		if (column === sortColumn) {
@@ -1088,7 +1088,6 @@ const Index = () => {
 		setIsUnorderedList(!isUnorderedList);
 		console.log(isUnorderedList);
 	};
-
 	
 	const handleSCVCheckboxChange = (e) => {
         setIsSeparateCSV(e.target.checked);
@@ -1097,8 +1096,10 @@ const Index = () => {
 
 	//open project in EBSS
 	const openInEBSS = (uuid) => {
-		console.log("uuid: ", uuid);
-		navigate('/ebss', { state: { uuid } });  // Send uuid via state
+		console.log("uuid:", uuid);
+		const url = `${window.location.origin}/#/ebss?uuid=${encodeURIComponent(uuid)}`;
+		console.log("Opening URL:", url);
+		window.open(url, '_blank');
 	}
 
 	
@@ -1114,10 +1115,10 @@ const Index = () => {
 					</div>
 			)}
 			<div className="page-wrapper" style={{ opacity: loadingD2 || loadingLivonia ? '0.1' : '' }}>
-				{/* <h6>
-					{' '}
-					<b>Catalog control</b>
-				</h6> */}
+			<h4 className='' style={{ fontWeight: "700", textDecoration: "underline" }}>Catalogue Control</h4>
+			<h6 className='mb-5' style={{ fontSize: "1.1em", fontWeight: "400" }}>D2, Send to Engine, D2 and EBBS</h6>
+
+
 
 				<div className="filter-container">
 					<label>
@@ -1382,7 +1383,7 @@ const Index = () => {
 												: data.selectedData.data.num_orders}
 										</td>
 										<td>
-											<button className="mr-2 table-button">
+											<button className="mr-2 table-button" onClick={() => openInEBSS(data.selectedData.data.uuid)}>
 												Open in EBSS
 											</button>
 										</td>
@@ -1400,7 +1401,7 @@ const Index = () => {
 											{data.insertedOrdersAmount} 
 										</td>
 										<td>
-											<button className="mr-2 table-button">
+											<button className="mr-2 table-button" onClick={() => openInEBSS(data.selectedData.data.uuid)}>
 												Open in EBSS
 											</button>
 										</td>

@@ -431,6 +431,46 @@ const pool = mysql.createPool(dbConfig);
     });
   });
 
+
+  // ------------------ EBSS -------------------
+
+    //Endpoint to add data to pdfgen_ebss table
+    app.post("/api/pdfgen_ebss", (req, res) => {
+        const data = req.body;
+        console.log("recieved data: ", data);
+      if (!data || typeof data !== 'object') {
+        return res.status(400).send("Invalid: Expected data object");
+      }
+      if (!data.project_uuid) {
+        return res.status(400).send("Invalid: Expected project_uuid");
+      }
+          
+      const query = `
+      INSERT INTO pdfgen_ebss (
+        project_uuid, product_type, production_active, production_type, template_name, data
+      ) VALUES (?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        product_type = VALUES(product_type),
+        production_active = VALUES(production_active),
+        production_type = VALUES(production_type),
+        template_name = VALUES(template_name),
+        data = VALUES(data),
+        updated_at = NOW()
+    `;
+      const values = [
+        data.project_uuid, data.product_type, data.production_active, data.production_type, data.template_name, JSON.stringify(data.data)
+      ];
+      pool.query(query, values, (err, results) => {
+        if (err) {
+          console.error("Error inserting into pdfgen_ebss:", err);
+          // return res.status(500).send("Error inserting into pdfgen_ebss");
+          res.status(500).json({ error: err.sqlMessage || 'Database insertion failed' });
+        }
+        console.log("Data inserted into pdfgen_ebss", results);
+        res.status(200).json({ message: "Data inserted successfully", result: results });
+      });
+    });
+
   
 // Start server
 app.listen(port, () => {
