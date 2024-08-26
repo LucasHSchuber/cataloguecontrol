@@ -57,23 +57,30 @@ const Ebss = () => {
 
 
   // Handle file changes
-  const handleFileChange = (event, setFile) => {
-    setFile(event.target.files[0]);
-    console.log(event);
+  const handleFileChange = (event, setFile, fileType) => {
+    const file = event.target.files[0];
+    setFile(file);
+
+    if (file) {
+        setFormError((prevState) => ({ ...prevState, [fileType]: false }));
+    }
   };
 
   // Handle form submit
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    formCheck(); 
+    const errors = formCheck()
 
-    const hasError = Object.values(formError).some((error) => error === true)
+    const hasError = Object.values(errors).some((error) => error === true);
+    console.log(hasError)
     if (hasError){
         console.log("Form submission cancelled due to errors.");
         console.log(hasError)
         console.log(formError)
         return; 
+    } else {
+        
     }
 
     const jsonData = JSON.stringify({
@@ -115,64 +122,69 @@ const Ebss = () => {
 
   //checking values in form 
   const formCheck = () => {
-    if (productType === "duocat") { // form check for duocat
-        if (productionType === "") {
-            console.log("ALERT missing productiontype");
-            setFormError((prevState) => ({ ...prevState, productionType: true }));
-        }
-        if (template === "") {
-            console.log("ALERT missing template");
-            setFormError((prevState) => ({ ...prevState, template: true }));
-        }
-        if (allowReduced && overrideReducedPrice && reducedPrice === "") {
-            console.log("ALERT missing overrideprice");
-            setFormError((prevState) => ({ ...prevState, reducedPrice: true }));
-        }
-        if (!catalogueFile) {
-            console.log("ALERT missing catalogue file");
-            setFormError((prevState) => ({ ...prevState, catalogueFile: true }));
-        }
-        if (overrideProjectName && newProjectName === "") {
-            console.log("ALERT missing new product name");
-            setFormError((prevState) => ({ ...prevState, newProjectName: true }));
-        }
-        if (overridePrice && newPrice === "") {
-            console.log("ALERT missing new price");
-            setFormError((prevState) => ({ ...prevState, newPrice: true }));
-        }
-    } else if (productType === "photobook") { // form check for photobook
-        if (productionType === "") {
-            console.log("ALERT missing productiontype");
-            setFormError((prevState) => ({ ...prevState, productionType: true }));
-        }
-        if (template === "" || !template) {
-            console.log("ALERT missing template");
-            setFormError((prevState) => ({ ...prevState, template: true }));
-        }
-        if (!catalogueFile) {
-            console.log("ALERT missing catalogue file");
-            setFormError((prevState) => ({ ...prevState, catalogueFile: true }));
-        }
-        if (overridePrice && newPrice === "") {
-            console.log("ALERT missing new price");
-            setFormError((prevState) => ({ ...prevState, newPrice: true }));
-        }
-    } else if (productType === "schoolcatalogue") { // form check for school catalogue
-        if (productionType === "") {
-            console.log("ALERT missing productiontype");
-            setFormError((prevState) => ({ ...prevState, productionType: true }));
-        }
-        if (template === "") {
-            console.log("ALERT missing template");
-            setFormError((prevState) => ({ ...prevState, template: true }));
-        }
-        if (!catalogueFile) {
-            console.log("ALERT missing catalogue file");
-            setFormError((prevState) => ({ ...prevState, catalogueFile: true }));
-        }
+    let errors = {}; // Local object to track errors
+  
+    if (productType === "duocat") { 
+      if (productionType === "") {
+        console.log("ALERT missing productiontype");
+        errors.productionType = true;
+      }
+      if (template === "") {
+        console.log("ALERT missing template");
+        errors.template = true;
+      }
+      if (allowReduced && overrideReducedPrice && reducedPrice === "") {
+        console.log("ALERT missing overrideprice");
+        errors.reducedPrice = true;
+      }
+      if (!catalogueFile) {
+        console.log("ALERT missing catalogue file");
+        errors.catalogueFile = true;
+      }
+      if (overrideProjectName && newProjectName === "") {
+        console.log("ALERT missing new product name");
+        errors.newProjectName = true;
+      }
+      if (overridePrice && newPrice === "") {
+        console.log("ALERT missing new price");
+        errors.newPrice = true;
+      }
+    } else if (productType === "photobook") {
+      if (productionType === "") {
+        console.log("ALERT missing productiontype");
+        errors.productionType = true;
+      }
+      if (template === "" || !template) {
+        console.log("ALERT missing template");
+        errors.template = true;
+      }
+      if (!catalogueFile) {
+        console.log("ALERT missing catalogue file");
+        errors.catalogueFile = true;
+      }
+      if (overridePrice && newPrice === "") {
+        console.log("ALERT missing new price");
+        errors.newPrice = true;
+      }
+    } else if (productType === "schoolcatalogue") {
+      if (productionType === "") {
+        console.log("ALERT missing productiontype");
+        errors.productionType = true;
+      }
+      if (template === "") {
+        console.log("ALERT missing template");
+        errors.template = true;
+      }
+      if (!catalogueFile) {
+        console.log("ALERT missing catalogue file");
+        errors.catalogueFile = true;
+      }
     }
+  
+    setFormError(errors); 
+    return errors; 
   };
-
+  
     //remove alert-border
     useEffect(() => {
         // If the user selects a valid product type, remove the error border
@@ -249,202 +261,248 @@ const Ebss = () => {
         )}
 
         {productType !== "" && (
-        <div>
-            <div className="form-group d-flex">
-                <div className='label-box'>
-                    <label className='ebss-label' htmlFor="productionType">Production Type</label>
-                    <p htmlFor="template">Set internal or external production type</p>
+            <div>
+                <div className="form-group d-flex">
+                    <div className='label-box'>
+                        <label className='ebss-label' htmlFor="productionType">Production Type</label>
+                        <p htmlFor="template">Set internal or external production type</p>
+                    </div>
+                    <div className='choice-box'>
+                        <select
+                            className={`ebss-selectlist ${formError.productionType ? 'alert-select' : ''}`}
+                            id="productionType"
+                            value={productionType}
+                            onChange={(e) => setProductionType(e.target.value)}
+                        >
+                            <option value="">Select Production Type</option>
+                            <option value="internal">Internal</option>
+                            <option value="external">External</option>
+                        </select>
+                    </div>
                 </div>
-                <div className='choice-box'>
-                    <select
-                        className={`ebss-selectlist ${formError.productionType ? 'alert-select' : ''}`}
-                        id="productionType"
-                        value={productionType}
-                        onChange={(e) => setProductionType(e.target.value)}
-                    >
-                        <option value="">Select Production Type</option>
-                        <option value="internal">Internal</option>
-                        <option value="external">External</option>
-                    </select>
-                </div>
-            </div>
-            <hr></hr>
+                <hr></hr>
 
-            <div className="form-group d-flex">
-                <div className='label-box'>
-                    <label className='ebss-label' htmlFor="template">Template</label>
-                    <p htmlFor="template">Chooce template for selecting product type</p>
+                <div className="form-group d-flex">
+                    <div className='label-box'>
+                        <label className='ebss-label' htmlFor="template">Template</label>
+                        <p htmlFor="template">Chooce template for selecting product type</p>
+                    </div>
+                    <div className='choice-box'>
+                        <select
+                            className={`ebss-selectlist ${formError.template ? 'alert-select' : ''}`}
+                            id="template"
+                            value={template}
+                            onChange={(e) => setTemplate(e.target.value)}
+                        >
+                            <option value="">Select Template</option>
+                            {productType === "duocat" && (
+                                <option value="playercards">Playercards</option>
+                            )}
+                        </select>
+                    </div>
                 </div>
-                <div className='choice-box'>
-                    <select
-                        className={`ebss-selectlist ${formError.template ? 'alert-select' : ''}`}
-                        id="template"
-                        value={template}
-                        onChange={(e) => setTemplate(e.target.value)}
-                    >
-                        <option value="">Select Template</option>
-                        {productType === "duocat" && (
-                            <option value="playercards">Playercards</option>
+                <hr></hr>
+
+                <div className="form-group d-flex" style={{ height: "6em" }}>
+                    <div className='label-box'>
+                        <label className='ebss-label' htmlFor="catalogueFile">Catalogue File</label>
+                        <p htmlFor="template">Chooce a catalogue file for the product</p>
+                    </div>
+                    <div className='choice-box'>
+                        <input
+                            className='ml-2 hidden-file-input'
+                            id="catalogueFile"
+                            type="file"
+                            accept=".pdf"
+                            onChange={(e) => handleFileChange(e, setCatalogueFile, 'catalogueFile')}
+                        />
+                        <label htmlFor="catalogueFile" className="ml-2 custom-file-button">
+                            Choose File
+                         </label>
+                        {/* Display error message if formError.catalogueFile is true */}
+                        {formError.catalogueFile ? (
+                            <p className='ml-2 mt-1 alert-text'>Missing catalogue file</p>
+                        ) : (
+                            // Display selected file if available
+                            catalogueFile && (
+                                <div className='ml-2 mt-1' style={{ fontWeight: "500", fontSize: "1.1em" }}>
+                                     <p>
+                                        {catalogueFile.name}
+                                        <span
+                                            className='ml-4'
+                                            onClick={() => setCatalogueFile(null)}
+                                            style={{ cursor: 'pointer', color: 'red', marginLeft: '15px' }}
+                                        >
+                                            X
+                                        </span>
+                                    </p>
+                                </div>
+                            )
                         )}
-                    </select>
+                    </div>
                 </div>
-            </div>
-            <hr></hr>
+                <hr></hr>
 
-            <div className="form-group d-flex">
-                 <div className='label-box'>
-                    <label className='ebss-label' htmlFor="catalogueFile">Catalogue File</label>
-                    <p htmlFor="template">Chooce a catalogue file for the product</p>
-                </div>
-                <div className='choice-box'>
-                    <input
-                        className='ml-2'
-                        id="catalogueFile"
-                        type="file"
-                        accept=".pdf"
-                        onChange={(e) => handleFileChange(e, setCatalogueFile)}
-                    />
-                </div>
-            </div>
-            <hr></hr>
-
-
-            {productType === "duocat" && (   
-            <div className="">
-            <input
-                className="custom-checkbox"
-                id="logoActive"
-                type="checkbox"
-                checked={logoActive}
-                onChange={(e) => setLogoActive(e.target.checked)}
-            />
-            <label htmlFor="logoActive" className="custom-checkbox-label">Logo Active</label>
-            </div>
-            )}
-
-            {logoActive && (
-            <div className="">
-                <label htmlFor="logoFile">Logo File</label>
-                <input
-                className='ml-2'
-                id="logoFile"
-                type="file"
-                accept=".png,.jpeg"
-                onChange={(e) => handleFileChange(e, setLogoFile)}
-                />
-            </div>
-            )}
+                {productType === "duocat" && (   
+                   <div className='form-group d-flex' style={{ height: "5em" }}> 
+                        <div className="label-box">
+                            <label htmlFor="logoActive" className="ebss-label">Logo Active</label>
+                            <input
+                                className="ml-2 custom-checkbox"
+                                id="logoActive"
+                                type="checkbox"
+                                checked={logoActive}
+                                onChange={(e) => setLogoActive(e.target.checked)}
+                            />
+                        </div>
+                        {logoActive && (
+                        <div className="choice-box">
+                            <input
+                            className='ml-2 hidden-file-input'
+                            id="logoFile"
+                            type="file"
+                            accept=".png,.jpeg"
+                            onChange={(e) => handleFileChange(e, setLogoFile, 'logoFile')}
+                            />
+                            <label htmlFor="catalogueFile" className="ml-2 custom-file-button">
+                            Choose File
+                         </label>
+                        </div>
+                        )}
+                    </div>   
+                )}
+                <hr></hr>
             </div>
             )}
 
             {/* ------------------------------- VARIABLES FOR DUCOAT ------------------------------- */}
             {productType === "duocat" && (
             <div>
-            {/* Allow SEF Checkbox */}
-            <div className="">
-                <input
-                className="custom-checkbox"
-                id="allowSEF"
-                type="checkbox"
-                checked={allowSEF}
-                onChange={(e) => setAllowSEF(e.target.checked)}
-                />
-            <label htmlFor="allowSEF">Allow SEF</label>
+                <div className="form-group d-flex" style={{ height: "3em" }}>
+                    <div className='label-box'>
+                        <label htmlFor="overrideProjectName" className='ebss-label'>Override Project Name</label>
+                        <input
+                        className="ml-2 custom-checkbox"
+                        id="overrideProjectName"
+                        type="checkbox"
+                        checked={overrideProjectName}
+                        onChange={(e) => setOverrideProjectName(e.target.checked)}
+                        />
+                    </div>
+                    {overrideProjectName && (
+                        <div className='choice-box'>
+                            <input
+                                type="text"
+                                className={`form-input ${formError.newProjectName ? 'alert-select' : ''}`}
+                                value={newProjectName}
+                                onChange={(e) => setNewProjectName(e.target.value)}
+                                placeholder="Enter Project Name"
+                            />
+                        </div>   
+                    )}
+                </div>
+                <hr></hr>
             </div>
+            )}
 
-            {/* Allow Reduced Checkbox */}
-            <div className="" style={{ marginBottom: allowReduced ? "0" : "0" }}>
-                <input
-                className="custom-checkbox"
-                id="allowReduced"
-                type="checkbox"
-                checked={allowReduced}
-                onChange={(e) => setAllowReduced(e.target.checked)}
-                />
-            <label htmlFor="allowReduced">Allow Reduced</label>
-            </div>
+            {(productType === "duocat" || productType === "photobook") && (
+                <div>
+                    <div className="form-group d-flex" style={{ height: "3em" }}>
+                        <div className='label-box'>
+                            <label htmlFor="overridePrice" className='ebss-label'>Override Price</label>
+                            <input
+                                className="ml-2 custom-checkbox"
+                                id="overridePrice"
+                                type="checkbox"
+                                checked={overridePrice}
+                                onChange={(e) => setOverridePrice(e.target.checked)}
+                            />
+                        </div>   
+                        {overridePrice && (
+                        <div className='choice-box'>
+                            <input
+                                type="number"
+                                className={`form-input ${formError.newPrice ? 'alert-select' : ''}`}
+                                value={newPrice}
+                                onChange={(e) => setNewPrice(e.target.value)}
+                                placeholder="Enter Price"
+                            />
+                        </div>
+                        )}
+                    </div>
+                    <hr></hr>
+                </div>
+            )}
+        
 
-            {/* Override Reduced Price Checkbox & Number Input (Only show if Allow Reduced is checked) */}
-            {allowReduced && (
-                <div className="">
-                <input
-                    className="custom-checkbox"
-                    id="overrideReducedPrice"
-                    type="checkbox"
-                    checked={overrideReducedPrice}
-                    onChange={(e) => setOverrideReducedPrice(e.target.checked)}
-                />
-                <label htmlFor="overrideReducedPrice">Override Reduced Price</label>
-                {overrideReducedPrice && (
-                    <input
-                    type="number"
-                    className={`form-input ${formError.reducedPrice ? 'alert-select' : ''}`}
-                    value={reducedPrice}
-                    onChange={(e) => setReducedPrice(e.target.value)}
-                    placeholder="Enter Reduced Price"
-                    />
-                )}
+            {productType === "duocat" && (
+                <div>
+                    <div className='d-flex'>
+                        {/* Allow Reduced Checkbox */}
+                        <div className="label-box form-group" style={{ marginBottom: allowReduced ? "0" : "0" }}>
+                            <label htmlFor="allowReduced" className='ebss-label'>Allow Reduced</label>
+                            <input
+                                className="ml-2 custom-checkbox"
+                                id="allowReduced"
+                                type="checkbox"
+                                checked={allowReduced}
+                                onChange={(e) => setAllowReduced(e.target.checked)}
+                            />                        
+                            {/* Override Reduced Price Checkbox & Number Input (Only show if Allow Reduced is checked) */}
+                            {allowReduced && (
+                            <div className="form-group">
+                                <input
+                                    className="mr-2 custom-checkbox"
+                                    id="overrideReducedPrice"
+                                    type="checkbox"
+                                    checked={overrideReducedPrice}
+                                    onChange={(e) => setOverrideReducedPrice(e.target.checked)}
+                                />
+                                <label htmlFor="overrideReducedPrice">Override Reduced Price</label>
+                                
+                            </div>
+                            )}
+                        </div>
+                        {overrideReducedPrice && (
+                        <div className='choice-box' style={{ marginTop: "1.5em" }}>
+                            <input
+                            type="number"
+                            className={`form-input ${formError.reducedPrice ? 'alert-select' : ''}`}
+                            value={reducedPrice}
+                            onChange={(e) => setReducedPrice(e.target.value)}
+                            placeholder="Enter Reduced Price"
+                            />
+                        </div>
+                        )}
+                    </div>
+                    <hr></hr>
+
+                     {/* Allow SEF Checkbox */}
+                     <div className="form-group">
+                        <input
+                        className="mr-2 custom-checkbox"
+                        id="allowSEF"
+                        type="checkbox"
+                        checked={allowSEF}
+                        onChange={(e) => setAllowSEF(e.target.checked)}
+                        />
+                        <label htmlFor="allowSEF">Allow SEF</label>
+                    </div>
                 </div>
             )}
 
-            {/* Override Product Name Checkbox & Number Input */}
-            <div className="">
+            {productType !== "" && (
+            <div className="form-group mt-3">
                 <input
-                className="custom-checkbox"
-                id="overrideProjectName"
-                type="checkbox"
-                checked={overrideProjectName}
-                onChange={(e) => setOverrideProjectName(e.target.checked)}
-                />
-                <label htmlFor="overrideProjectName">Override Product Name</label>
-                {overrideProjectName && (
-                <input
-                    type="text"
-                    className={`form-input ${formError.newProjectName ? 'alert-select' : ''}`}
-                    value={newProjectName}
-                    onChange={(e) => setNewProjectName(e.target.value)}
-                    placeholder="Enter Product Name"
-                />
-                )}
-            </div>
-                    
-        </div>
-        )}
-
-        {(productType === "duocat" || productType === "photobook") && (
-            <div className="">
-                <input
-                    className="custom-checkbox"
-                    id="overridePrice"
+                    className="mr-2 custom-checkbox"
+                    id="productionActive"
                     type="checkbox"
-                    checked={overridePrice}
-                    onChange={(e) => setOverridePrice(e.target.checked)}
+                    checked={productionActive}
+                    onChange={(e) => setProductionActive(e.target.checked)}
                 />
-                <label htmlFor="overridePrice">Override Price</label>
-                {overridePrice && (
-                    <input
-                        type="number"
-                        className={`form-input ${formError.newPrice ? 'alert-select' : ''}`}
-                        value={newPrice}
-                        onChange={(e) => setNewPrice(e.target.value)}
-                        placeholder="Enter Price"
-                    />
-                )}
+                <label htmlFor="productionActive" className="custom-checkbox-label">Production Active</label>
             </div>
-        )}
-
-        {productType !== "" && (
-        <div className="mt-3">
-        <input
-            className="custom-checkbox"
-            id="productionActive"
-            type="checkbox"
-            checked={productionActive}
-            onChange={(e) => setProductionActive(e.target.checked)}
-        />
-        <label htmlFor="productionActive" className="custom-checkbox-label">Production Active</label>
-        </div>
-        )}
+            )}
     
 
         <button

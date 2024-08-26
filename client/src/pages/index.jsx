@@ -1097,7 +1097,8 @@ const Index = () => {
 	//open project in EBSS
 	const openInEBSS = (uuid) => {
 		console.log("uuid:", uuid);
-		const url = `${window.location.origin}/#/ebss?uuid=${encodeURIComponent(uuid)}`;
+		// const url = `${window.location.origin}/#/ebss?uuid=${encodeURIComponent(uuid)}`;
+		const url = `${window.location.origin}/#/ebss?uuid=${encodeURIComponent(uuid)}&product=Catalogue`;
 		console.log("Opening URL:", url);
 		window.open(url, '_blank');
 	}

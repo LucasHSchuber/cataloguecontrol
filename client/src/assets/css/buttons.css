@@ -88,3 +88,30 @@
 
 
 /* ---------------- EBSS --------------- */
+
+/* Hide the default file input */
+.hidden-file-input {
+    display: none;
+}
+
+/* Custom styled button */
+.custom-file-button {
+    display: inline-block;
+    padding: 0.5em 1em;
+    background-color: #4aabff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+    transition: 0.2s;
+}
+.custom-file-button:hover {
+    background-color: #1391ff;
+}
+.custom-file-button:active {
+    background-color: #3874a8;
+    transform: translateY(1.5px);
+}

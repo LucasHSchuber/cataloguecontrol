@@ -33,6 +33,12 @@
   border-color: red !important;
   background-color: #fff7f7 !important;
 }
+.alert-text {
+  color: red;
+  font-weight: 500;
+  font-size: 1.1em;
+
+}
 
 
 
@@ -200,8 +206,10 @@
   font-weight: 500;
 }
 .form-input{
-  width: 20em;
-  height: 2em;
+  width: 30em;
+  height: 3em;
+  border-radius: 5px;
+  border: 0.5px solid rgb(81, 81, 81);
   margin: 0 0 0 0.5em;
   padding-left: 0.4em !important;
 }
@@ -216,7 +224,6 @@
   cursor: pointer;
   outline: none;
   transition: background-color 0.2s, border-color 0.2s; 
-  margin: 0 1em 0 0.5em;
 }
 
 .custom-checkbox:checked {
