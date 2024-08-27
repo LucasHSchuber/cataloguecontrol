@@ -86,8 +86,8 @@ const Ebss = () => {
         try {
         const responseProjectData = await axios.get(`/api/index.php/rest/pdfgen/projectdata`, {
             params: {
-                project_uuid: "9fba7984-ff60-4a44-8482-509024feb902",
-                // project_uuid: uuid,
+                // project_uuid: "9fba7984-ff60-4a44-8482-509024feb902",
+                project_uuid: uuid,
                 product_type: product
             }
         });
@@ -173,13 +173,13 @@ const Ebss = () => {
     const missingFields = [];
     // Check if Production Type is selected
     if (!selectedProductionType) {
-      missingFields.push("production_type");
+      missingFields.push("Production type");
       setFormError((prevData) => ({...prevData, production_type: true}));
       hasError = true;
     }
     // Check if Template is selected
     if (!selectedTemplate) {
-      missingFields.push("template");
+      missingFields.push("Template");
       setFormError((prevData) => ({...prevData, template: true}));
       hasError = true;
     }
@@ -190,13 +190,13 @@ const Ebss = () => {
         const variableConfirmed = confirmationStatus[variable.name]
 
         if (variable.is_required && !variableValue) {
-          missingFields.push(variable.name);
+          missingFields.push(variable.display_name);
           setFormError((prevData) => ({...prevData, [variable.name]: true}));
           hasError = true;
         }
         if (variable.require_confirmation && (variableConfirmed && !variableValue)){
             console.error(`${variable.name} is confirmed but has no value.`);
-            missingFields.push(variable.name);
+            missingFields.push(variable.display_name);
             setFormError((prevData) => ({...prevData, [variable.name]: true}));
             hasError = true;
         }
@@ -209,16 +209,29 @@ const Ebss = () => {
       return;
     }
 
-    const jsonData = JSON.stringify({
-        logo_file: formData["logo_file"]?.name,
-        catalog_file: formData["catalog_file"]?.name,
-        allow_sef: formData["allow_sef"],
-        allow_reduced: formData["allow_reduced"],
-        override_price: formData["override_price"],
-        override_project_name: formData["override_project_name"],
-        override_reduced_price: formData["override_reduced_price"],
-    })
-    console.log("jsonData: ", jsonData)
+    // const jsonData = JSON.stringify({
+    //     logo_file: formData["logo_file"]?.name,
+    //     catalog_file: formData["catalog_file"]?.name,
+    //     allow_sef: formData["allow_sef"],
+    //     allow_reduced: formData["allow_reduced"],
+    //     override_price: formData["override_price"],
+    //     override_project_name: formData["override_project_name"],
+    //     override_reduced_price: formData["override_reduced_price"],
+    // })
+    // console.log("jsonData: ", jsonData)
+
+    console.log("UUID: ", uuid);
+
+    const variables = []
+    selectedTemplateObj.variables.forEach((variable) => {
+        variables.push({
+            name: variable.name,
+            value: formData[variable.name] instanceof File 
+            ? formData[variable.name].name 
+            : formData[variable.name] || ""
+        })
+    });
+    console.log("variables array: ", variables);
 
     const data = {
         project_uuid: uuid,
@@ -226,25 +239,18 @@ const Ebss = () => {
         production_type: productionTypes.find((type) => type.id === selectedProductionType)?.name,
         template: templates.find((type) => type.id === selectedTemplate)?.name,
         production_active: formData["production_active"],
-        data: jsonData
+        // data: jsonData
+        variables: variables
     };
     console.log("data: ", data);
 
     try {
-        const response = await axios.post(`${baseURL}/api/pdfgen_ebss`, data, {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-         })
-          console.log('Successfully submitted form:', response.data);
-          alert(`Succesfully sent data!`);
-
-    } catch (error) {
-        console.log('Error when submitted form:', error);
-        console.log('Error: ', error.response.data.error);
-
-    }
-  };
+        const response = await axios.post(`/api/index.php/rest/pdfgen/projectdata`, data );
+        console.log('response:', response.data);
+        } catch (error) {
+        console.error('Error posting data:', error);
+        }
+    };
 
     useEffect(() => {
       console.log('formData: ', formData);
