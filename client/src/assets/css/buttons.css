@@ -115,3 +115,24 @@
     background-color: #3874a8;
     transform: translateY(1.5px);
 }
+.ebss-button{
+    width: 10em;
+}
+.ebss-button:hover{
+    width: 10em;
+    background-color:#70ff4d;
+}
+.ebss-button:active{
+    background-color: #67f144;   
+}
+
+.ebss-button:focus{
+    outline: none !important;
+}
+
+.removeFile-button{
+    cursor: pointer;
+}
+.removeFile-button:hover{
+    color: red;
+}

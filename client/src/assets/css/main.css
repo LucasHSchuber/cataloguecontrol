@@ -29,9 +29,9 @@
 } */
 
 .alert-select {
-  border: 1px solid red;
+  border: 1px solid red !important;
   border-color: red !important;
-  background-color: #fff7f7 !important;
+  
 }
 .alert-text {
   color: red;
@@ -181,21 +181,21 @@
   margin: 1em 0 1em 1em;
 }
 .label-box{
- width: 40em;
+ width: 35em;
 }
 .choice-box{
-  width: 20em;
+  width: 50%;
 }
 .ebss-label{
   font-size: 1.1em;
   font-weight: 700;
 }
-.variables-box{
+.variable-box{
   background-color: white;
   /* width: 30em; */
   padding: 3em;
   border-radius: 10px;
-  border: 1px solid rgb(215, 215, 215);
+  border: 1px solid rgb(225, 225, 225);
 }
 .ebss-selectlist{
   width: 30em;
@@ -206,7 +206,7 @@
   font-weight: 500;
 }
 .form-input{
-  width: 30em;
+  width: 75%;
   height: 3em;
   border-radius: 5px;
   border: 0.5px solid rgb(81, 81, 81);
@@ -215,31 +215,37 @@
 }
 .custom-checkbox {
   position: relative;
-  width: 15px;
-  height: 15px;
+  width: 17px;
+  height: 17px;
   appearance: none;
   background-color: white;
   border: 2px solid #ccc; 
-  border-radius: 5px; 
+  border-radius: 10px; 
   cursor: pointer;
   outline: none;
   transition: background-color 0.2s, border-color 0.2s; 
 }
-
 .custom-checkbox:checked {
-  background-color: black;
-  border-color: black;    
+  background-color: #1391ff;
+  border: 1px solid rgb(211, 211, 211);  
 }
-
 .custom-checkbox:checked::after {
   content: '';
   position: absolute;
-  left: 2px;
-  top: 3px;
+  left: 4.2px;
+  top: 4.8px;
   width: 8px;
   height: 5px;
   border: solid white;
   border-width: 0 0 2px 2px;
   transform: rotate(-45deg);
 }
-
+.productionactive-checkbox{
+  border-radius: 4px; 
+}
+.productionactive-checkbox:checked {
+  background-color: #3adb12;
+}
+.selectedfile-box p{
+  font-style: italic;
+}
