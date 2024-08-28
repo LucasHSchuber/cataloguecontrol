@@ -23,15 +23,12 @@ const Ebss = () => {
     // const uuid = "9fba7984-ff60-4a44-8482-509024feb902";
     const product = query.get('product');
     const name = query.get('name');
-
-
     useEffect(() => {
         console.log("Received UUID:", uuid);
         console.log("Received PRODUCT TYPE:", product);
         console.log("Received PRODUCT NAME:", name);
         setProductType(product);
     }, [uuid, product, name]);
-
 
 
     // State variables for each form field
@@ -62,11 +59,6 @@ const Ebss = () => {
     const [confirmationStatus, setConfirmationStatus] = useState({});
 
     const [formError, setFormError] = useState({});
-
-    // useEffect(() => {
-    //     setSelectedProductionType(1)
-    // }, []);
-
 
 
 
@@ -104,8 +96,8 @@ const Ebss = () => {
             const initialFormVariablesData = {};
             console.log(projectData.data)
             projectData.data.forEach((data) => {
-                if (data.variable.type === "file" && typeof data.value === 'string' && data.value.trim() !== '') {
-                    initialFormVariablesData[data.name] = data.value.split("/").pop();
+                if (data.variable.type === "file" && data.value) {
+                    initialFormVariablesData[data.name] = data.value;
                 }else{
                     initialFormVariablesData[data.name] = data.value;
                 }
@@ -130,177 +122,282 @@ const Ebss = () => {
 
 
     // Handle changes in production type select
-  const handleProductionTypeChange = (e) => {
-    setSelectedProductionType(e.target.value);
-    console.log(e.target.value);
-    // Clear errorForm
-    setFormError((prevData) => ({...prevData, production_type: false}))
-  };
-
-  // Handle changes in template select
-  const handleTemplateChange = (e) => {
-    setSelectedTemplate(e.target.value);
-    setFormData({}); 
-    setConfirmationStatus({}); 
-    // Clear errorForm
-    setFormError((prevData) => ({...prevData, template: false}))
-  };
-
-  // Handle changes in form input fields
-  const handleInputChange = (name, value) => {
-    setFormData((prevData) => ({...prevData, [name]: value,}));
-    setFormError((prevState) => ({ ...prevState, [name]: false }));
+    const handleProductionTypeChange = (e) => {
+        setSelectedProductionType(e.target.value);
+        console.log(e.target.value);
+        // Clear errorForm
+        setFormError((prevData) => ({...prevData, production_type: false}))
     };
 
-  // Handle confirmation checkbox change
-  const handleConfirmationChange = (name, value) => {
-    setConfirmationStatus((prevStatus) => ({
-      ...prevStatus,
-      [name]: value,
-    }));
-  };
+    // Handle changes in template select
+    const handleTemplateChange = (e) => {
+        setSelectedTemplate(e.target.value);
+        setFormData({}); 
+        setConfirmationStatus({}); 
+        // Clear errorForm
+        setFormError((prevData) => ({...prevData, template: false}))
+    };
 
-  // Find the selected template
-  const selectedTemplateObj = templates.find(
-    (template) => template.id === selectedTemplate
-  );
-
-  // Handle file changes
-  const handleFileChange = (event, setFile, name) => {
-    const file = event.target.files[0];
-    console.log("Uploaded File: ", file);
-    console.log("All Uploaded File Data: ", event.target.files);
-    // setFile(file);
-    setFormData((prevData) => ({
-        ...prevData,
-        [name]: file,
-    }));
-    if (file) {
+    // Handle changes in form input fields
+    const handleInputChange = (name, value) => {
+        setFormData((prevData) => ({...prevData, [name]: value,}));
         setFormError((prevState) => ({ ...prevState, [name]: false }));
-    }
-  };
-  // handle clear file
-  const handleClearFile = (name) => {
-    setFormData((prevData) => ({...prevData,[name]: null,}));
-    // setFormError((prevState) => ({ ...prevState, [name]: true }));
-  };
+        };
 
-  useEffect(() => {
-        console.log(formData.catalog_file);
-  }, [formData]);
+    // Handle confirmation checkbox change
+    const handleConfirmationChange = (name, value) => {
+        setConfirmationStatus((prevStatus) => ({
+        ...prevStatus,
+        [name]: value,
+        }));
+    };
+
+    // Find the selected template
+    const selectedTemplateObj = templates.find(
+        (template) => template.id === selectedTemplate
+    );
+
+    // Handle file changes
+    const handleFileChange = (event, setFile, name) => {
+        const file = event.target.files[0];
+        console.log("Uploaded File: ", file);
+        console.log("All Uploaded File Data: ", event.target.files);
+        // setFile(file);
+        setFormData((prevData) => ({
+            ...prevData,
+            [name]: file,
+        }));
+        if (file) {
+            setFormError((prevState) => ({ ...prevState, [name]: false }));
+        }
+    };
+    // handle clear file
+    const handleClearFile = (name) => {
+        setFormData((prevData) => ({...prevData,[name]: null,}));
+        // setFormError((prevState) => ({ ...prevState, [name]: true }));
+    };
+
+    useEffect(() => {
+            console.log('formData', formData);
+    }, [formData]);
   
 
+    // Handle form submit
+    const handleSubmit = async (event) => {
+        event.preventDefault();
 
-
-  // Handle form submit
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    // Validation checks
-    let hasError = false;
-    const missingFields = [];
-    // Check if Production Type is selected
-    if (!selectedProductionType) {
-      missingFields.push("Production type");
-      setFormError((prevData) => ({...prevData, production_type: true}));
-      hasError = true;
-    }
-    // Check if Template is selected
-    if (!selectedTemplate) {
-      missingFields.push("Template");
-      setFormError((prevData) => ({...prevData, template: true}));
-      hasError = true;
-    }
-    // Check required variables
-    if (selectedTemplateObj) {
-      selectedTemplateObj.variables.forEach((variable) => {
-        const variableValue = formData[variable.name]
-        const variableConfirmed = confirmationStatus[variable.name]
-
-        if (variable.is_required && !variableValue) {
-          missingFields.push(variable.display_name);
-          setFormError((prevData) => ({...prevData, [variable.name]: true}));
-          hasError = true;
+        // ---Validation checks---
+        let hasError = false;
+        const missingFields = [];
+        // Check if Production Type is selected
+        if (!selectedProductionType) {
+        missingFields.push("Production type");
+        setFormError((prevData) => ({...prevData, production_type: true}));
+        hasError = true;
         }
-        if (variable.require_confirmation && (variableConfirmed && !variableValue)){
-            console.error(`${variable.name} is confirmed but has no value.`);
+        // Check if Template is selected
+        if (!selectedTemplate) {
+        missingFields.push("Template");
+        setFormError((prevData) => ({...prevData, template: true}));
+        hasError = true;
+        }
+        // Check required variables
+        if (selectedTemplateObj) {
+        selectedTemplateObj.variables.forEach((variable) => {
+            const variableValue = formData[variable.name]
+            const variableConfirmed = confirmationStatus[variable.name]
+
+            if (variable.is_required && !variableValue) {
             missingFields.push(variable.display_name);
             setFormError((prevData) => ({...prevData, [variable.name]: true}));
             hasError = true;
-        }
-      });
-    }
-    // If error
-    if (hasError) {
-      console.error("The following fields are missing or incomplete:", missingFields);
-      alert(`Please complete the following fields: ${missingFields.join(", ")}`);
-      return;
-    }
-
-    // Create Variables-array 
-    const variables = []
-    console.log('selectedTemplateObj', selectedTemplateObj);
-
-    selectedTemplateObj.variables.forEach((variable) => {
-        let fileData = formData[variable.name];
-        let value;
-        let file;
-
-        if (fileData instanceof File) {
-            value = fileData.name;
-            file = fileData; 
-        } else {
-            value = fileData || "";
-        }
-    
-        variables.push({
-            name: variable.name,
-            value: value,
-            type: variable.type,
-            file: file 
+            }
+            if (variable.require_confirmation && (variableConfirmed && !variableValue)){
+                console.error(`${variable.name} is confirmed but has no value.`);
+                missingFields.push(variable.display_name);
+                setFormError((prevData) => ({...prevData, [variable.name]: true}));
+                hasError = true;
+            }
         });
-    });
-    console.log("variables array: ", variables);
-
-    // Prepare array of data to send to restAPI
-    const data = {
-        project_uuid: uuid,
-        product_type: product,
-        production_type: productionTypes.find((type) => type.id === selectedProductionType)?.name,
-        template: templates.find((type) => type.id === selectedTemplate)?.name,
-        production_active: formData["production_active"],
-        variables: variables
-    };
-    console.log("data: ", data);
-
-    // Create array of files to send to SaveFilesToDisk
-    const files = [];
-    variables.forEach((type) => {
-        if (type.type === "file" && type.file && type.file instanceof File) {
-            console.log("creating files array to send with SaveFilesToDisk");
-            files.push(type);
         }
-    })
-    console.log("files array:", files);
-    SaveFilesToDisk(files)
+        // If error
+        if (hasError) {
+        console.error("The following fields are missing or incomplete:", missingFields);
+        alert(`Please complete the following fields: ${missingFields.join(", ")}`);
+        return;
+        }
 
-    // Request to send data to restAPI
-    try {
-        const response = await axios.post(`/api/index.php/rest/pdfgen/projectdata`, data );
-        console.log('response:', response.data);
+        // Create Variables-array 
+        // Create array of files to send to SaveFilesToDisk
+        const variables = []
+        console.log('selectedTemplateObj', selectedTemplateObj);
+        selectedTemplateObj.variables.forEach((variable) => {
+            let fileData = formData[variable.name];
+            let value;
+            let file;
+            if (fileData instanceof File) {
+                value = fileData.name;
+                file = fileData; 
+            } else {
+                value = fileData || "";
+            }
+            variables.push({
+                name: variable.name,
+                value: value,
+                type: variable.type,
+                file: file 
+            });
+        });
+        console.log("variables: ", variables);
+
+        const files = [];
+        variables.forEach((type) => {
+            if (type.type === "file" && type.file && type.file instanceof File) {
+                console.log("creating files array to send with SaveFilesToDisk");
+                files.push(type);
+            }
+        })
+        console.log("files array:", files);
+
+        if (files.length > 0) {
+            console.log("FILES LENGTH > 0")
+            saveFilesToDisk(files).then(responseSaveFilesToDisk => {
+                console.log("responseSaveFilesToDisk: ", responseSaveFilesToDisk);
+    
+                if (responseSaveFilesToDisk.status === 200) {
+                     // Create new variable array to send with in data to restAPI 
+                    const variablesArray = [];
+                    responseSaveFilesToDisk.files.forEach((file) => {    
+                        variablesArray.push({
+                            name: file.name,
+                            value: file.path,
+                        });
+                    });
+
+                    // Create a set of existing variable names to avoid duplicates
+                    const existingVariableNames = new Set(
+                        responseSaveFilesToDisk.files.map(file => file.name)
+                    );
+
+                    console.log("selectedTemplateObj.variables", selectedTemplateObj.variables);
+                     // Add new variables from selectedTemplateObj.variables if their name is not already in the set
+                    selectedTemplateObj.variables.forEach((variable) => {
+                        let value = formData[variable.name];
+                        if (variable.type === 'bool') {
+                            value = value === true ? true : false;
+                        }
+                        if (!existingVariableNames.has(variable.name)) {
+                            variablesArray.push({
+                                name: variable.name,
+                                value: value, 
+                            });
+                        }
+                    });
+                    console.log("variablesArray: ", variablesArray);
+                    
+                    // Prepare array of data to send to restAPI
+                    const data = {
+                        project_uuid: uuid,
+                        product_type: product,
+                        production_type: productionTypes.find((type) => type.id === selectedProductionType)?.name,
+                        template: templates.find((type) => type.id === selectedTemplate)?.name,
+                        production_active: formData["production_active"] ? formData["production_active"] : false,
+                        variables: variablesArray
+                    };
+                    console.log("data: ", data);
+
+
+                   // Request to send data to REST API
+                    axios.post(`/api/index.php/rest/pdfgen/projectdata`, data)
+                    .then(response => {
+                        console.log('response:', response.data); 
+                    })
+                    .catch(error => {
+                        console.error('Error posting data:', error);
+                    });
+
+                } else if (responseSaveFilesToDisk.status === 500){
+                    console.log("Upload failed with status 500:", responseSaveFilesToDisk.status, responseSaveFilesToDisk.error);
+                } else{
+                    console.log("Upload failed:", responseSaveFilesToDisk);
+                }
+            }).catch(error => {
+                console.error("Error occurred while saving files:", error);
+            });
+        } else if (files.length === 0) { //if files.length === 0
+            console.log("FILES LENGTH === 0")
+            console.log("selectedTemplateObj.variables", selectedTemplateObj.variables);
+            const variablesArray = [];
+            // Add new variables from selectedTemplateObj.variables if their name is not already in the set
+            selectedTemplateObj.variables.forEach((variable) => {
+                let value = formData[variable.name];
+                if (variable.type === 'bool') {
+                    value = value === true ? true : false;
+                }
+                variablesArray.push({
+                    name: variable.name,
+                    value: value, 
+                });
+            });
+            console.log("variablesArray: ", variablesArray);
+            
+            // Prepare array of data to send to restAPI
+            const data = {
+                project_uuid: uuid,
+                product_type: product,
+                production_type: productionTypes.find((type) => type.id === selectedProductionType)?.name,
+                template: templates.find((type) => type.id === selectedTemplate)?.name,
+                production_active: formData["production_active"] ? formData["production_active"] : false,
+                variables: variablesArray
+            };
+            console.log("data: ", data);
+
+            // Request to send data to REST API
+            axios.post(`/api/index.php/rest/pdfgen/projectdata`, data)
+            .then(response => {
+                console.log('response:', response.data); 
+            })
+            .catch(error => {
+                console.error('Error posting data:', error);
+            });
+        }
+    };
+
+
+    //Method saveFilesToDisk
+    const saveFilesToDisk = async (files) => {
+        const formData = new FormData();
+        console.log('files', files);
+        
+        files.forEach(({ file, name }) => {
+            if (file instanceof File) {
+                formData.append('files', file, file.name); // Append the file itself
+                formData.append('name', name); // Append the directory name or other metadata
+                console.log("File: ", file, "Name: ", name);
+            } else {
+                console.error('Not a valid File object:', file);
+            }
+        });
+        console.log('formData entries:');
+        for (const [key, value] of formData.entries()) {
+            console.log(`${key}: ${value}`);
+        }
+        
+        try {
+            const response = await axios.post(`${baseURL}/api/savefiles`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            console.log('Files saved:', response.data);
+            return response.data;
         } catch (error) {
-        console.error('Error posting data:', error);
+            console.error('Error saving files:', error);
+            return error;
         }
     };
-
-    // formdata print
-    useEffect(() => {
-      console.log('formData: ', formData);
-    }, [formData]);
-    // formerror print
-    useEffect(() => {
-        console.log("FormError:", formError)
-    }, [formError]);
+    
+    
 
 
 
@@ -478,7 +575,7 @@ const Ebss = () => {
                                 </label>
                                 {formData[variable.name] && (
                                 <div className='ml-2 selectedfile-box'>
-                                    <p>{formData[variable.name]?.name || formData[variable.name]}
+                                    <p>{formData[variable.name]?.name || formData[variable.name].split("\\").pop()}
                                     <span
                                             className='ml-4'
                                             onClick={() => handleClearFile(variable.name)}
@@ -516,11 +613,11 @@ const Ebss = () => {
                  </div>
                  {formData["production_active"] ? (
                  <div className='choice-box'>
-                    <h6><i>true</i></h6>
+                    <h6 style={{ fontSize: "1.1em" }}><i>true</i></h6>
                  </div>   
                  ) : (
                  <div className='choice-box'>
-                    <h6><i>false</i></h6>
+                    <h6 style={{ fontSize: "1.1em" }}><i>false</i></h6>
                  </div>
                  )}
             </div>

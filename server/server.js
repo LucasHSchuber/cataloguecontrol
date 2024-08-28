@@ -1,4 +1,5 @@
 const express = require("express");
+const multer = require('multer');
 const mysql = require("mysql");
 const bodyParser = require("body-parser");
 const cors = require("cors");
@@ -19,6 +20,76 @@ app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
 // MySQL Connection Pool
 const pool = mysql.createPool(dbConfig);
+
+  // Define storage configuration for multer
+  const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        // Retrieve the directory name from the request body
+        // const directoryName = req.body.name; 
+        const directoryName = "catalog_file";
+        if (!directoryName) {
+            return cb(new Error('No directory name provided'), null);
+        }
+
+        // Construct the upload directory based on the directoryName
+        const baseDir = path.join('C:', 'Resources_ebss', directoryName);
+
+      // Ensure the directory exists; create it if it doesn't
+      if (!fs.existsSync(baseDir)) {
+        fs.mkdirSync(baseDir, { recursive: true });
+      }
+
+      cb(null, baseDir); 
+    },
+    filename: function (req, file, cb) {
+        cb(null, file.originalname);
+    }
+  });
+
+  const upload = multer({ storage: storage });
+
+  app.post('/api/savefiles', upload.array('files'), (req, res) => {
+    try {
+      console.log('Request Body:', req.body);
+      console.log('Uploaded Files:', req.files);
+  
+      // Check if the request body does not contain the expected 'name' field
+      if (!req.body.name) {
+        return res.status(400).json({
+          error: 'No directory name provided',
+          status: 400
+        });
+      }
+  
+      const name = Array.isArray(req.body.name) ? req.body.name : [req.body.name];
+  
+      // Add the correct `fileNames` to each file object based on the index
+      const filesWithNames = req.files.map((file, index) => ({
+        ...file,
+        name: name[index] || name[0] 
+      }));
+  
+      // If everything goes well, send a success response
+      res.status(200).json({
+        message: 'Files uploaded successfully',
+        status: 200,
+        files: filesWithNames
+      });
+  
+    } catch (error) {
+      console.error('Error occurred during file upload:', error);
+  
+      res.status(500).json({
+        error: 'An error occurred during file upload',
+        status: 500,
+        details: error.message
+      });
+    }
+  });
+  
+
+
+
 
   // API endpoint to fetch data by orderuuid from MySQL
   app.get("/api/neo_projects", (req, res) => {
