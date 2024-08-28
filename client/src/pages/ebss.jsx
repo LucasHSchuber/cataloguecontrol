@@ -17,16 +17,20 @@ const Ebss = () => {
 
     const location = useLocation();
     const query = new URLSearchParams(location.search);
+
     // Retrieve the 'uuid' and 'product' from the query string
     const uuid = query.get('uuid');
+    // const uuid = "9fba7984-ff60-4a44-8482-509024feb902";
     const product = query.get('product');
+    const name = query.get('name');
 
 
     useEffect(() => {
         console.log("Received UUID:", uuid);
         console.log("Received PRODUCT TYPE:", product);
+        console.log("Received PRODUCT NAME:", name);
         setProductType(product);
-    }, [uuid, product]);
+    }, [uuid, product, name]);
 
 
 
@@ -68,6 +72,7 @@ const Ebss = () => {
 
     // Fetch data from the API
     useEffect(() => {
+    // Fetch templates and production types
     const fetchData = async () => {
         try {
         const response = await axios.get(`/api/index.php/rest/pdfgen/productdata`, {
@@ -82,6 +87,7 @@ const Ebss = () => {
         console.error('Error fetching data:', error);
         }
     };
+    //Fetch current data 
     const fetcProjecthData = async () => {
         try {
         const responseProjectData = await axios.get(`/api/index.php/rest/pdfgen/projectdata`, {
@@ -91,15 +97,33 @@ const Ebss = () => {
                 product_type: product
             }
         });
-        console.log('responseProjectData:', responseProjectData.data);
-        if (responseProjectData.data.result !== null){
+        console.log('responseProjectData:', responseProjectData.data.result);
+        const projectData = responseProjectData.data.result;
+        if (projectData){
             console.log("NOT NULL")
-            console.log("Result:", responseProjectData.data.result)
+            const initialFormVariablesData = {};
+            console.log(projectData.data)
+            projectData.data.forEach((data) => {
+                if (data.variable.type === "file" && typeof data.value === 'string' && data.value.trim() !== '') {
+                    initialFormVariablesData[data.name] = data.value.split("/").pop();
+                }else{
+                    initialFormVariablesData[data.name] = data.value;
+                }
+            })
+            console.log('initialFormVariablesData', initialFormVariablesData);
+            setFormData({
+                production_active: projectData.production_active,
+                ...initialFormVariablesData
+            })
+            setSelectedProductionType(projectData.production_type.id)
+            setSelectedTemplate(projectData.template.id)
+            // projectData.template.variables.forEach((variable))
         } 
         } catch (error) {
         console.error('Error fetching project data:', error);
         }
     };
+
     fetchData();
     fetcProjecthData();
     }, []);
@@ -144,7 +168,8 @@ const Ebss = () => {
   // Handle file changes
   const handleFileChange = (event, setFile, name) => {
     const file = event.target.files[0];
-    console.log("Filename: ", file);
+    console.log("Uploaded File: ", file);
+    console.log("All Uploaded File Data: ", event.target.files);
     // setFile(file);
     setFormData((prevData) => ({
         ...prevData,
@@ -154,12 +179,15 @@ const Ebss = () => {
         setFormError((prevState) => ({ ...prevState, [name]: false }));
     }
   };
-
   // handle clear file
   const handleClearFile = (name) => {
     setFormData((prevData) => ({...prevData,[name]: null,}));
     // setFormError((prevState) => ({ ...prevState, [name]: true }));
   };
+
+  useEffect(() => {
+        console.log(formData.catalog_file);
+  }, [formData]);
   
 
 
@@ -209,41 +237,54 @@ const Ebss = () => {
       return;
     }
 
-    // const jsonData = JSON.stringify({
-    //     logo_file: formData["logo_file"]?.name,
-    //     catalog_file: formData["catalog_file"]?.name,
-    //     allow_sef: formData["allow_sef"],
-    //     allow_reduced: formData["allow_reduced"],
-    //     override_price: formData["override_price"],
-    //     override_project_name: formData["override_project_name"],
-    //     override_reduced_price: formData["override_reduced_price"],
-    // })
-    // console.log("jsonData: ", jsonData)
-
-    console.log("UUID: ", uuid);
-
+    // Create Variables-array 
     const variables = []
+    console.log('selectedTemplateObj', selectedTemplateObj);
+
     selectedTemplateObj.variables.forEach((variable) => {
+        let fileData = formData[variable.name];
+        let value;
+        let file;
+
+        if (fileData instanceof File) {
+            value = fileData.name;
+            file = fileData; 
+        } else {
+            value = fileData || "";
+        }
+    
         variables.push({
             name: variable.name,
-            value: formData[variable.name] instanceof File 
-            ? formData[variable.name].name 
-            : formData[variable.name] || ""
-        })
+            value: value,
+            type: variable.type,
+            file: file 
+        });
     });
     console.log("variables array: ", variables);
 
+    // Prepare array of data to send to restAPI
     const data = {
         project_uuid: uuid,
         product_type: product,
         production_type: productionTypes.find((type) => type.id === selectedProductionType)?.name,
         template: templates.find((type) => type.id === selectedTemplate)?.name,
         production_active: formData["production_active"],
-        // data: jsonData
         variables: variables
     };
     console.log("data: ", data);
 
+    // Create array of files to send to SaveFilesToDisk
+    const files = [];
+    variables.forEach((type) => {
+        if (type.type === "file" && type.file && type.file instanceof File) {
+            console.log("creating files array to send with SaveFilesToDisk");
+            files.push(type);
+        }
+    })
+    console.log("files array:", files);
+    SaveFilesToDisk(files)
+
+    // Request to send data to restAPI
     try {
         const response = await axios.post(`/api/index.php/rest/pdfgen/projectdata`, data );
         console.log('response:', response.data);
@@ -252,10 +293,11 @@ const Ebss = () => {
         }
     };
 
+    // formdata print
     useEffect(() => {
       console.log('formData: ', formData);
     }, [formData]);
-
+    // formerror print
     useEffect(() => {
         console.log("FormError:", formError)
     }, [formError]);
@@ -266,9 +308,13 @@ const Ebss = () => {
   return (
     <div className="page-wrapper">
       <h4 className='' style={{ fontWeight: "700", textDecoration: "underline" }}>EBSS</h4>
-      <h6 className='mb-5' style={{ fontSize: "1.1em", fontWeight: "400" }}>Lorem impus text place some text here</h6>
+      <h6 className='mb-4' style={{ fontSize: "1.1em", fontWeight: "400" }}>
+      EBSS is a management interface designed to control and organize variables and data for seamless integration with the PdfGen Engine.
+      This tool is essential for optimizing and streamlining the document production pipeline.
+      </h6>
 
-      <h6 className='mb-5' style={{ fontSize: "1.5em", fontWeight: "600" }}>Product type: {productType}</h6>
+      <h6 className='' style={{ fontSize: "1.3em" }}><b>Product name:</b> {name}</h6>
+      <h6 className='mb-5' style={{ fontSize: "1.3em"  }}><b>Product type:</b> {productType}</h6>
 
       <form onSubmit={handleSubmit} className='ebss-form'>
 
@@ -419,25 +465,20 @@ const Ebss = () => {
                             </div>
                             <div className='choice-box'>
                                 <input
-                                // className='ml-2 hidden-file-input'
                                 className={`ml-2 hidden-file-input ${formError[variable.name] ? 'alert-select' : ''}`}
                                 type="file"
                                 id={variable.name}
-                                // onChange={(e) =>
-                                //     handleInputChange(variable.name, e.target.files[0])
-                                // }
                                 onChange={(e) => handleFileChange(e, variable.name === 'catalog_file' ? setCatalogueFile : setLogoFile, variable.name)}
                                 accept={variable.name === 'catalog_file' ? '.pdf' : '.png,.jpeg'}
                                 />
                                 <label htmlFor={variable.name} 
-                                // className="ml-2 custom-file-button"
                                 className={`ml-2 custom-file-button ${formError[variable.name] ? 'alert-select' : ''}`}
                                 >
                                     Choose File
                                 </label>
                                 {formData[variable.name] && (
                                 <div className='ml-2 selectedfile-box'>
-                                    <p>{formData[variable.name]?.name}
+                                    <p>{formData[variable.name]?.name || formData[variable.name]}
                                     <span
                                             className='ml-4'
                                             onClick={() => handleClearFile(variable.name)}
@@ -471,15 +512,15 @@ const Ebss = () => {
                         }
                     />
                     <label htmlFor="productionActive" className="ebss-label">Production Active</label>
-                    <p htmlFor="template">Lorem impsum text here to show what this means</p>
+                    <p htmlFor="template">A check to indicate whether the project should actively process and manage orders.</p>
                  </div>
                  {formData["production_active"] ? (
                  <div className='choice-box'>
-                    <h6>TRUE</h6>
+                    <h6><i>true</i></h6>
                  </div>   
                  ) : (
                  <div className='choice-box'>
-                    <h6>FALSE</h6>
+                    <h6><i>false</i></h6>
                  </div>
                  )}
             </div>

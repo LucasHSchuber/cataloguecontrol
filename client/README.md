@@ -9,3 +9,10 @@ The project is designed to provide two distinct functionalities:
 
 Each program is self-contained and can be run independently of the other, although they can also be integrated depending on the project's requirements.
 
+## Catalog Control
+---
+
+## EBSS
+EBSS is a management interface designed to control and organize variables and data for seamless integration with the PdfGen Engine.
+By centralizing the configuration process, EBSS ensures precise and efficient data flow into templates, enabling consistent and accurate PDF generation.
+This tool is essential for optimizing and streamlining the document production pipeline.

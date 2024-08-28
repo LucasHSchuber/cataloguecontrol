@@ -1095,10 +1095,11 @@ const Index = () => {
 
 
 	//open project in EBSS
-	const openInEBSS = (uuid) => {
+	const openInEBSS = (uuid, name) => {
 		console.log("uuid:", uuid);
+		console.log("name:", name);
 		// const url = `${window.location.origin}/#/ebss?uuid=${encodeURIComponent(uuid)}`;
-		const url = `${window.location.origin}/#/ebss?uuid=${encodeURIComponent(uuid)}&product=Catalogue`;
+		const url = `${window.location.origin}/#/ebss?uuid=${encodeURIComponent(uuid)}&product=Catalogue&name=${encodeURIComponent(name)}`;
 		console.log("Opening URL:", url);
 		window.open(url, '_blank');
 	}
@@ -1384,7 +1385,7 @@ const Index = () => {
 												: data.selectedData.data.num_orders}
 										</td>
 										<td>
-											<button className="mr-2 table-button" onClick={() => openInEBSS(data.selectedData.data.uuid)}>
+											<button className="mr-2 table-button" onClick={() => openInEBSS(data.selectedData.data.uuid, data.selectedData.data.name)}>
 												Open in EBSS
 											</button>
 										</td>
@@ -1505,7 +1506,7 @@ const Index = () => {
 										{data.data.D2 ? data.data.new_orders : data.data.num_orders}
 									</td>
 									<td>
-										<button className="mr-2 table-button" onClick={() => openInEBSS(data.data.uuid)}>Open in EBSS</button>
+										<button className="mr-2 table-button" onClick={() => openInEBSS(data.data.uuid, data.data.name)}>Open in EBSS</button>
 									</td>
 									{/* <td>
 										<button className="mr-2 table-button">Send to Engine</button>
