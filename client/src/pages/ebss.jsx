@@ -30,7 +30,7 @@ const Ebss = () => {
     useEffect(() => {
         console.log("Received UUID:", uuid);
         console.log("Received PRODUCT TYPE:", product);
-        console.log("Received PRODUCT NAME:", name);
+        console.log("Received PROJECT NAME:", name);
         setProductType(product);
     }, [uuid, product, name]);
 
@@ -104,6 +104,8 @@ const Ebss = () => {
                 projectData.data.forEach((data) => {
                     if (data.variable.type === "file" && data.value) {
                         initialFormVariablesData[data.name] = data.value;
+                        console.log(data.name)
+                        console.log(data.value)
                         setConfirmationStatus((prevStatus) => ({...prevStatus, [data.name]: data.value,}));
                     }else{
                         initialFormVariablesData[data.name] = data.value;
@@ -340,6 +342,7 @@ const Ebss = () => {
                     console.log("Upload failed with status 500:", responseSaveFilesToDisk.status, responseSaveFilesToDisk.error);
                     setloading(false);
                     toast.error("File upload failed");
+                    setFormError({})
                 } else{
                     console.log("Upload failed:", responseSaveFilesToDisk);
                     setloading(false);
@@ -382,6 +385,7 @@ const Ebss = () => {
                 console.log('response:', response.data); 
                 setloading(false);
                 toast.success(`Successfully Saved to EBSS!`);
+                setFormError({})
             })
             .catch(error => {
                 console.error('Error posting data:', error);
@@ -392,37 +396,37 @@ const Ebss = () => {
     };
 
 
-// Method to save files to disk
-const saveFilesToDisk = async (files) => {
-    const formData = new FormData();
-    
-    files.forEach(({ file, name }) => {
-        if (file instanceof File) {
-            formData.append('files', file);  
-            formData.append('name', name);   
-        } else {
-            console.error('Not a valid File object:', file);
-        }
-    });
-     // Log formData entries to see what is being sent
-     console.log('FormData contents:');
-     for (const [key, value] of formData.entries()) {
-         console.log(`${key}:`, value);
-     }
-
-    try {
-        const response = await axios.post(`${baseURL}/api/savefiles`, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
+    // Method to save files to disk
+    const saveFilesToDisk = async (files) => {
+        const formData = new FormData();
+        
+        files.forEach(({ file, name }) => {
+            if (file instanceof File) {
+                formData.append('files', file);  
+                formData.append('name', name);   
+            } else {
+                console.error('Not a valid File object:', file);
+            }
         });
-        console.log('Files saved:', response.data);
-        return response.data;
-    } catch (error) {
-        console.error('Error saving files:', error);
-        return error;
-    }
-};
+        // Log formData entries to see what is being sent
+        console.log('FormData contents:');
+        for (const [key, value] of formData.entries()) {
+            console.log(`${key}:`, value);
+        }
+
+        try {
+            const response = await axios.post(`${baseURL}/api/savefiles`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            console.log('Files saved:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Error saving files:', error);
+            return error;
+        }
+    };
 
       
     // const saveFilesToDisk = async (files) => {
@@ -476,12 +480,12 @@ const saveFilesToDisk = async (files) => {
 
       <div className="page-wrapper"  style={{ opacity: loading ? "0.2" : "" }}>
       <h4 className='' style={{ fontWeight: "700", textDecoration: "underline" }}>EBSS</h4>
-      <h6 className='mb-4' style={{ fontSize: "1.1em", fontWeight: "400" }}>
+      <h6 className='mb-4' style={{ fontSize: "1.1em", fontWeight: "400", width: "70%" }}>
       EBSS is a management interface designed to control and organize variables and data for seamless integration with the PdfGen Engine.
       This tool is essential for optimizing and streamlining the document production pipeline.
       </h6>
 
-      <h6 className='' style={{ fontSize: "1.3em" }}><b>Product name:</b> {name}</h6>
+      <h6 className='' style={{ fontSize: "1.3em" }}><b>Project name:</b> {name}</h6>
       <h6 className='mb-5' style={{ fontSize: "1.3em"  }}><b>Product type:</b> {productType}</h6>
 
       <form onSubmit={handleSubmit} className='ebss-form'>
@@ -637,7 +641,8 @@ const saveFilesToDisk = async (files) => {
                                 type="file"
                                 id={variable.name}
                                 onChange={(e) => handleFileChange(e, variable.name === 'catalog_file' ? setCatalogueFile : setLogoFile, variable.name)}
-                                accept={variable.name === 'catalog_file' ? '.pdf' : '.png,.jpeg'}
+                                // accept={variable.name === 'catalog_file' ? '.pdf' : '.png,.jpeg'}
+                                accept={variable.extra}
                                 />
                                 <label htmlFor={variable.name} 
                                 className={`ml-2 custom-file-button ${formError[variable.name] ? 'alert-select' : ''}`}
@@ -646,7 +651,7 @@ const saveFilesToDisk = async (files) => {
                                 </label>
                                 {formData[variable.name] && (
                                 <div className='ml-2 selectedfile-box'>
-                                    <p>{formData[variable.name]?.name || formData[variable.name].split("\\").pop()}
+                                    <p>{formData[variable.name]?.name || formData[variable.name].split('/').pop()}
                                     <span
                                             className='ml-4'
                                             onClick={() => handleClearFile(variable.name)}
@@ -704,8 +709,7 @@ const saveFilesToDisk = async (files) => {
 
       </form>
       </div>
-
-      {/* Add the ToastContainer to display notifications */}
+      
       <ToastContainer 
         position="bottom-left"
         autoClose={4500}

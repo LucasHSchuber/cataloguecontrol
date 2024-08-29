@@ -26,6 +26,8 @@ import {
 	apiPasswordGeneral,
 	ocrreserveToken,
 } from '../../../config/env.js';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 //importet images
 import clearFilter from '../assets/images/clear-filter.png';
@@ -283,9 +285,6 @@ const Index = () => {
 			console.log('Error in runD2 function: ', error);
 			return [];
 		} 
-		// finally {
-		// 	setLoadingD2(false);
-		// }
 	};
 
 	//fetch neo_projects and update responseArray
@@ -573,10 +572,12 @@ const Index = () => {
 			setSelectedData([]);
 			setSelectedIndices([]);
 		}, 1000);
-		setShowD2SuccessMessage(true);
-		setTimeout(() => {
-			setShowD2SuccessMessage(false);
-		}, 2000);
+		// setShowD2SuccessMessage(true);
+		// setTimeout(() => {
+		// 	setShowD2SuccessMessage(false);
+		// }, 2000);
+		toast.success(`D2: D2 has run successfully!`);
+
 
 		console.log("updatedDataMessage: (after D2 triggered and run)", updatedDataMessage);
 		console.log("updatedDataMessage.selectedData: (after D2 triggered and run)", updatedDataMessage.map((data) => data.selectedData));
@@ -616,10 +617,11 @@ const Index = () => {
 				//If orders are 0, print error
 				if (orders.length === 0) {
 					console.log("There are no current orders to process!");
-					setShowErrorLivoniaMessage(true);
-				  setTimeout(() => {
-					  setShowErrorLivoniaMessage(false);
-				  }, 3000);
+					// setShowErrorLivoniaMessage(true);
+					// setTimeout(() => {
+					// 	setShowErrorLivoniaMessage(false);
+					// }, 3000);
+					toast.error("Livonia Error: There are no current orders to process");
 					setLoadingLivonia(false);
 					return;
 				} else {
@@ -859,10 +861,11 @@ const Index = () => {
 			setTriggerSource(false);
 			setIsSeparateCSV(false);
 		}, 1000);
-		setShowSuccessLivoniaMessage(true);
-		setTimeout(() => {
-			setShowSuccessLivoniaMessage(false);
-		}, 3000);
+		// setShowSuccessLivoniaMessage(true);
+		// setTimeout(() => {
+		// 	setShowSuccessLivoniaMessage(false);
+		// }, 3000);
+		toast.success(`Livonia: Livonia has run successfully!`);
 
 		setRefreshProjects(!refreshProjects);
 	}
@@ -965,16 +968,16 @@ const Index = () => {
 		setSelectedData((prevSelectedData) => {
 			if (selectedIndices.includes(data.uuid)) {
 				// Remove data if index is already selected
-				setShowRemovedRowMessage(true);
-				setTimeout(() => {
-					setShowRemovedRowMessage(false);
-				}, 500);
+				// setShowRemovedRowMessage(true);
+				// setTimeout(() => {
+				// 	setShowRemovedRowMessage(false);
+				// }, 500);
 				return prevSelectedData.filter((item) => item.data.uuid !== data.uuid);
 			} else {
-				setShowAddedRowMessage(true);
-				setTimeout(() => {
-					setShowAddedRowMessage(false);
-				}, 500);
+				// setShowAddedRowMessage(true);
+				// setTimeout(() => {
+				// 	setShowAddedRowMessage(false);
+				// }, 500);
 				// Add data if index is newly selected
 				console.log('selected data', selectedData);
 				return [...prevSelectedData, { index, data }];
@@ -1005,18 +1008,18 @@ const Index = () => {
 		setSelectedData([]);
 		// setUpdatedDataMessage([]);
 		// setUpdatedDataMessageLivonia([]);
-		setShowRemovedRowMessage(true);
-		setTimeout(() => {
-			setShowRemovedRowMessage(false);
-		}, 500);
+		// setShowRemovedRowMessage(true);
+		// setTimeout(() => {
+		// 	setShowRemovedRowMessage(false);
+		// }, 500);
 	};
 
 	const removeSelectedData = (indexToRemove) => {
 		console.log('Index to remove:', indexToRemove);
-		setShowRemovedRowMessage(true);
-		setTimeout(() => {
-			setShowRemovedRowMessage(false);
-		}, 500);
+		// setShowRemovedRowMessage(true);
+		// setTimeout(() => {
+		// 	setShowRemovedRowMessage(false);
+		// }, 500);
 
 		setSelectedData((prevSelectedData) =>
 			prevSelectedData.filter((item) => item.data.uuid !== indexToRemove)
@@ -1184,7 +1187,7 @@ const Index = () => {
 
 					<div className="mt-1 mr-1 ml-2 checkbox-container">
 						<input
-							className="mr-2"
+							className="mr-1 custom-checkbox"
 							type="checkbox"
 							checked={isUnorderedList}
 							onChange={handleCheckboxChange}
@@ -1257,7 +1260,7 @@ const Index = () => {
 										data-can_wrap={p.new_orders > 0 ? '1' : '0'}
 										style={{
 											backgroundColor: selectedIndices.includes(p.uuid)
-												? '#ECFFE8'
+												? '#ececec'
 												: '',
 										}}
 										onClick={() => AddRow(index, p)}
@@ -1440,6 +1443,7 @@ const Index = () => {
 							</button>
 							<div className='mt-2'>
 								<input
+									className='custom-checkbox'
 									type="checkbox"
 									id="separateCSVCheckbox"
 									checked={isSeparateCSV}
@@ -1544,6 +1548,7 @@ const Index = () => {
 						</button>
 						<div className='mt-2'>
 							<input
+								className='custom-checkbox'
 								type="checkbox"
 								id="separateCSVCheckbox"
 								checked={isSeparateCSV}
@@ -1617,6 +1622,21 @@ const Index = () => {
 					Livonia: Livonia has run successfully
 				</div>
 			)}
+
+			<ToastContainer 
+				position="bottom-left"
+				autoClose={4500}
+				hideProgressBar={false}
+				// transition={Slide}
+				newestOnTop={false}
+				closeOnClick
+				rtl={false}
+				pauseOnFocusLoss
+				draggable
+				pauseOnHover
+				theme="colored"
+				style={{ fontSize: '14px', height: "3em", margin: "0 0 3em 0" }}
+			/>
 		</div>
 	);
 };

@@ -96,10 +96,6 @@ app.post('/api/savefiles', (req, res) => {
       const originalFilePath = file.filepath;
       const targetPath = path.join(targetDir, file.originalFilename);
       
-      responseTargetDir = targetDir.replace(/\\/g, '');
-      responseTargetPathClean = responseTargetDir.replace(`${BASE_DIR}`, "").replace(`${RESOURCES_DIR}`, "");
-      responseTargetPath = path.join(responseTargetPathClean, file.originalFilename);
-
       console.log(`Moving file from ${originalFilePath} to ${targetPath}`);
 
       // Move the file from temporary to final destination
@@ -110,6 +106,11 @@ app.post('/api/savefiles', (req, res) => {
           // Continue processing other files even if one fails
           return;
         }
+
+        // Clean and format the path for response
+        let responseTargetPath = path.relative(path.join(BASE_DIR, RESOURCES_DIR), targetPath);
+        responseTargetPath = responseTargetPath.replace(/\\/g, '/'); // Ensure using forward slashes
+
 
         responseFiles.push({
           filename: file.originalFilename,
