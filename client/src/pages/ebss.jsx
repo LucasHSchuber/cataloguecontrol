@@ -12,6 +12,10 @@ import {
 	baseURL,
 } from '../../../config/env.js';
 
+import { RingLoader } from 'react-spinners';
+import { ToastContainer, toast, Slide } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 
 const Ebss = () => {
 
@@ -59,6 +63,8 @@ const Ebss = () => {
     const [confirmationStatus, setConfirmationStatus] = useState({});
 
     const [formError, setFormError] = useState({});
+
+    const [loading, setloading] = useState(false);
 
 
 
@@ -234,6 +240,9 @@ const Ebss = () => {
         return;
         }
 
+        // --- Form passed Check ---
+        setloading(true);
+
         // Create Variables-array 
         // Create array of files to send to SaveFilesToDisk
         const variables = []
@@ -313,20 +322,28 @@ const Ebss = () => {
                     };
                     console.log("data: ", data);
 
-
+                    // const fileNames = responseSaveFilesToDisk.files.map(file => file.filename).join(', '); // Create the array to display in the toaster
                    // Request to send data to REST API
                     axios.post(`/api/index.php/rest/pdfgen/projectdata`, data)
                     .then(response => {
                         console.log('response:', response.data); 
+                        setloading(false);
+                        toast.success(`Successfully Saved to EBSS!`);
                     })
                     .catch(error => {
                         console.error('Error posting data:', error);
+                        setloading(false);
+                        toast.error("Failed to Save to EBSS");
                     });
 
                 } else if (responseSaveFilesToDisk.status === 500){
                     console.log("Upload failed with status 500:", responseSaveFilesToDisk.status, responseSaveFilesToDisk.error);
+                    setloading(false);
+                    toast.error("File upload failed");
                 } else{
                     console.log("Upload failed:", responseSaveFilesToDisk);
+                    setloading(false);
+                    toast.error("File upload failed");
                 }
             }).catch(error => {
                 console.error("Error occurred while saving files:", error);
@@ -363,9 +380,13 @@ const Ebss = () => {
             axios.post(`/api/index.php/rest/pdfgen/projectdata`, data)
             .then(response => {
                 console.log('response:', response.data); 
+                setloading(false);
+                toast.success(`Successfully Saved to EBSS!`);
             })
             .catch(error => {
                 console.error('Error posting data:', error);
+                setloading(false);
+                toast.error("Failed to Save to EBSS");
             });
         }
     };
@@ -377,19 +398,17 @@ const saveFilesToDisk = async (files) => {
     
     files.forEach(({ file, name }) => {
         if (file instanceof File) {
-            formData.append('files', file);  // Append the file itself
-            formData.append('name', name);   // Append the directory name
+            formData.append('files', file);  
+            formData.append('name', name);   
         } else {
             console.error('Not a valid File object:', file);
         }
     });
-
      // Log formData entries to see what is being sent
      console.log('FormData contents:');
      for (const [key, value] of formData.entries()) {
          console.log(`${key}:`, value);
      }
- 
 
     try {
         const response = await axios.post(`${baseURL}/api/savefiles`, formData, {
@@ -444,7 +463,18 @@ const saveFilesToDisk = async (files) => {
 
 
   return (
-    <div className="page-wrapper">
+    <div className="wrapper">
+
+        {loading && (
+            <div className="loader-D2">
+                    <h6 className="loader-text">
+                            Processing... 
+                    </h6>
+                    <RingLoader className="loader-spinner" color={'#123abc'} size={50} />
+            </div>
+        )}
+
+      <div className="page-wrapper"  style={{ opacity: loading ? "0.2" : "" }}>
       <h4 className='' style={{ fontWeight: "700", textDecoration: "underline" }}>EBSS</h4>
       <h6 className='mb-4' style={{ fontSize: "1.1em", fontWeight: "400" }}>
       EBSS is a management interface designed to control and organize variables and data for seamless integration with the PdfGen Engine.
@@ -673,6 +703,24 @@ const saveFilesToDisk = async (files) => {
         <p style={{ marginTop: "-1em" }}><i>{selectedTemplate === "" || selectedProductionType === "" ? "Button is disabled until both Production Type and Template is set" : ""}</i></p>
 
       </form>
+      </div>
+
+      {/* Add the ToastContainer to display notifications */}
+      <ToastContainer 
+        position="bottom-left"
+        autoClose={4500}
+        hideProgressBar={false}
+        // transition={Slide}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+        style={{ fontSize: '14px', height: "3em", margin: "0 0 3em 0" }}
+      />
+
     </div>
   );
 };
