@@ -67,14 +67,14 @@ const Ebss = () => {
     // Fetch templates and production types
     const fetchData = async () => {
         try {
-        const response = await axios.get(`/api/index.php/rest/pdfgen/productdata`, {
-            params: {
-                product_type: product
-            }
-        });
-        setProductionTypes(response.data.production_types);
-        setTemplates(response.data.templates);
-        console.log('response:', response.data);
+            const response = await axios.get(`/api/index.php/rest/pdfgen/productdata`, {
+                params: {
+                    product_type: product
+                }
+            });
+            setProductionTypes(response.data.production_types);
+            setTemplates(response.data.templates);
+            console.log('response:', response.data);
         } catch (error) {
         console.error('Error fetching data:', error);
         }
@@ -82,35 +82,39 @@ const Ebss = () => {
     //Fetch current data 
     const fetcProjecthData = async () => {
         try {
-        const responseProjectData = await axios.get(`/api/index.php/rest/pdfgen/projectdata`, {
-            params: {
-                // project_uuid: "9fba7984-ff60-4a44-8482-509024feb902",
-                project_uuid: uuid,
-                product_type: product
-            }
-        });
-        console.log('responseProjectData:', responseProjectData.data.result);
-        const projectData = responseProjectData.data.result;
-        if (projectData){
-            console.log("NOT NULL")
-            const initialFormVariablesData = {};
-            console.log(projectData.data)
-            projectData.data.forEach((data) => {
-                if (data.variable.type === "file" && data.value) {
-                    initialFormVariablesData[data.name] = data.value;
-                }else{
-                    initialFormVariablesData[data.name] = data.value;
+            const responseProjectData = await axios.get(`/api/index.php/rest/pdfgen/projectdata`, {
+                params: {
+                    // project_uuid: "9fba7984-ff60-4a44-8482-509024feb902",
+                    project_uuid: uuid,
+                    product_type: product
                 }
-            })
-            console.log('initialFormVariablesData', initialFormVariablesData);
-            setFormData({
-                production_active: projectData.production_active,
-                ...initialFormVariablesData
-            })
-            setSelectedProductionType(projectData.production_type.id)
-            setSelectedTemplate(projectData.template.id)
-            // projectData.template.variables.forEach((variable))
-        } 
+            });
+            console.log('responseProjectData:', responseProjectData.data.result);
+            const projectData = responseProjectData.data.result;
+            if (projectData){
+                console.log("NOT NULL")
+                const initialFormVariablesData = {};
+                console.log(projectData.data)
+                projectData.data.forEach((data) => {
+                    if (data.variable.type === "file" && data.value) {
+                        initialFormVariablesData[data.name] = data.value;
+                        setConfirmationStatus((prevStatus) => ({...prevStatus, [data.name]: data.value,}));
+                    }else{
+                        initialFormVariablesData[data.name] = data.value;
+                        setConfirmationStatus((prevStatus) => ({...prevStatus, [data.name]: data.value,}));
+                    }
+                })
+                console.log('initialFormVariablesData', initialFormVariablesData);
+                setFormData({
+                    production_active: projectData.production_active,
+                    ...initialFormVariablesData
+                })
+                setSelectedProductionType(projectData.production_type.id)
+                setSelectedTemplate(projectData.template.id)
+                // projectData.template.variables.forEach((variable))
+            } else {
+                console.log("No project data fetched from /projectdata with id:", uuid)
+            }
         } catch (error) {
         console.error('Error fetching project data:', error);
         }
@@ -146,10 +150,10 @@ const Ebss = () => {
 
     // Handle confirmation checkbox change
     const handleConfirmationChange = (name, value) => {
-        setConfirmationStatus((prevStatus) => ({
-        ...prevStatus,
-        [name]: value,
-        }));
+        setConfirmationStatus((prevStatus) => ({...prevStatus, [name]: value,}));
+        if (value === false){
+            setFormData((prevStatus) => ({...prevStatus, [name]: null,}));
+        }
     };
 
     // Find the selected template
@@ -180,6 +184,9 @@ const Ebss = () => {
     useEffect(() => {
             console.log('formData', formData);
     }, [formData]);
+    useEffect(() => {
+        console.log('confirmationStatus', confirmationStatus);
+    }, [confirmationStatus]);
   
 
     // Handle form submit
@@ -364,38 +371,72 @@ const Ebss = () => {
     };
 
 
-    //Method saveFilesToDisk
-    const saveFilesToDisk = async (files) => {
-        const formData = new FormData();
-        console.log('files', files);
-        
-        files.forEach(({ file, name }) => {
-            if (file instanceof File) {
-                formData.append('files', file, file.name); // Append the file itself
-                formData.append('name', name); // Append the directory name or other metadata
-                console.log("File: ", file, "Name: ", name);
-            } else {
-                console.error('Not a valid File object:', file);
-            }
+// Method to save files to disk
+const saveFilesToDisk = async (files) => {
+    const formData = new FormData();
+    
+    files.forEach(({ file, name }) => {
+        if (file instanceof File) {
+            formData.append('files', file);  // Append the file itself
+            formData.append('name', name);   // Append the directory name
+        } else {
+            console.error('Not a valid File object:', file);
+        }
+    });
+
+     // Log formData entries to see what is being sent
+     console.log('FormData contents:');
+     for (const [key, value] of formData.entries()) {
+         console.log(`${key}:`, value);
+     }
+ 
+
+    try {
+        const response = await axios.post(`${baseURL}/api/savefiles`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
         });
-        console.log('formData entries:');
-        for (const [key, value] of formData.entries()) {
-            console.log(`${key}: ${value}`);
-        }
+        console.log('Files saved:', response.data);
+        return response.data;
+    } catch (error) {
+        console.error('Error saving files:', error);
+        return error;
+    }
+};
+
+      
+    // const saveFilesToDisk = async (files) => {
+    //     const formData = new FormData();
+    //     console.log('files', files);
         
-        try {
-            const response = await axios.post(`${baseURL}/api/savefiles`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
-            console.log('Files saved:', response.data);
-            return response.data;
-        } catch (error) {
-            console.error('Error saving files:', error);
-            return error;
-        }
-    };
+    //     files.forEach(({ file, name }) => {
+    //         if (file instanceof File) {
+    //             formData.append('files', file, file.name); 
+    //             formData.append('name', name); 
+    //             console.log("File: ", file, "Name: ", name);
+    //         } else {
+    //             console.error('Not a valid File object:', file);
+    //         }
+    //     });
+    //     console.log('formData entries:');
+    //     for (const [key, value] of formData.entries()) {
+    //         console.log(`${key}: ${value}`);
+    //     }
+        
+    //     try {
+    //         const response = await axios.post(`${baseURL}/api/savefiles`, formData, {
+    //             headers: {
+    //                 'Content-Type': 'multipart/form-data',
+    //             },
+    //         });
+    //         console.log('Files saved:', response.data);
+    //         return response.data;
+    //     } catch (error) {
+    //         console.error('Error saving files:', error);
+    //         return error;
+    //     }
+    // };
     
     
 

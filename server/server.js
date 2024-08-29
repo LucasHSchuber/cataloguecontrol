@@ -1,6 +1,6 @@
 const express = require("express");
-const multer = require('multer');
 const mysql = require("mysql");
+const formidable = require('formidable');
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const dbConfig = require("./DbConfig.js");
@@ -9,6 +9,17 @@ const path = require("path");
 
 const app = express();
 const port = 3001;
+
+// Load environment variables
+require('dotenv').config();
+// Access environment variables
+const BASE_DIR = process.env.BASE_DIR || 'C:';
+const RESOURCES_DIR = process.env.RESOURCES_DIR || 'Resources_ebss';
+
+// Example usage
+console.log(`Base Directory: ${BASE_DIR}`);
+console.log(`Resources Directory: ${RESOURCES_DIR}`);
+
 
 // Middleware
 app.use(cors());
@@ -21,71 +32,180 @@ app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 // MySQL Connection Pool
 const pool = mysql.createPool(dbConfig);
 
-  // Define storage configuration for multer
-  const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        // Retrieve the directory name from the request body
-        // const directoryName = req.body.name; 
-        const directoryName = "catalog_file";
-        if (!directoryName) {
-            return cb(new Error('No directory name provided'), null);
+
+
+
+// ------------- ROUTES ------------
+
+
+
+// Route to hanlde storing files
+app.post('/api/savefiles', (req, res) => {
+  const form = new formidable.IncomingForm();
+
+  // Set the directory where files will be temporarily stored
+  const tempDir = path.join(__dirname, 'temp');
+  if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir);
+  }
+  form.uploadDir = tempDir;
+  form.keepExtensions = true; // Keep the file extensions
+
+  form.parse(req, (err, fields, files) => {
+    if (err) {
+      console.error('Error parsing form data:', err);
+      return res.status(400).json({ error: 'Error parsing form data' });
+    }
+
+    console.log('Parsed fields:', fields);
+    console.log('Parsed files:', files);
+
+    const responseFiles = [];
+    const directoryNames = fields.name; // This should be an array of directory names
+
+    if (!directoryNames || directoryNames.length === 0) {
+      return res.status(400).json({ error: 'No directory names provided' });
+    }
+
+    // Ensure we have an equal number of directory names and files
+    if (files.files.length !== directoryNames.length) {
+      return res.status(400).json({ error: 'Number of files and directory names do not match' });
+    }
+
+    // Track if any errors occur
+    let errorOccurred = false;
+    const fileArray = Array.isArray(files.files) ? files.files : [files.files];
+    
+    fileArray.forEach((file, index) => {
+      // Validate file
+      if (!file || !file.filepath) {
+        console.error(`Invalid file or filepath for key: files`);
+        errorOccurred = true;
+        return;
+      }
+
+      const directoryName = directoryNames[index]; // Get directory name corresponding to this file
+      // const targetDir = path.join('C:', 'Resources_ebss', directoryName);
+      const targetDir = path.join(process.env.BASE_DIR, process.env.RESOURCES_DIR, directoryName);
+
+      // Create target directory if it does not exist
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+      }
+
+      const originalFilePath = file.filepath;
+      const targetPath = path.join(targetDir, file.originalFilename);
+      
+      responseTargetDir = targetDir.replace(/\\/g, '');
+      responseTargetPathClean = responseTargetDir.replace(`${BASE_DIR}`, "").replace(`${RESOURCES_DIR}`, "");
+      responseTargetPath = path.join(responseTargetPathClean, file.originalFilename);
+
+      console.log(`Moving file from ${originalFilePath} to ${targetPath}`);
+
+      // Move the file from temporary to final destination
+      fs.rename(originalFilePath, targetPath, err => {
+        if (err) {
+          console.error(`Error moving file ${originalFilePath} to ${targetPath}:`, err);
+          errorOccurred = true;
+          // Continue processing other files even if one fails
+          return;
         }
 
-        // Construct the upload directory based on the directoryName
-        const baseDir = path.join('C:', 'Resources_ebss', directoryName);
+        responseFiles.push({
+          filename: file.originalFilename,
+          path: responseTargetPath,
+          name: directoryName
+        });
 
-      // Ensure the directory exists; create it if it doesn't
-      if (!fs.existsSync(baseDir)) {
-        fs.mkdirSync(baseDir, { recursive: true });
-      }
+        console.log(`File saved to ${targetPath}`);
+      });
+    });
 
-      cb(null, baseDir); 
-    },
-    filename: function (req, file, cb) {
-        cb(null, file.originalname);
-    }
-  });
-
-  const upload = multer({ storage: storage });
-
-  app.post('/api/savefiles', upload.array('files'), (req, res) => {
-    try {
-      console.log('Request Body:', req.body);
-      console.log('Uploaded Files:', req.files);
-  
-      // Check if the request body does not contain the expected 'name' field
-      if (!req.body.name) {
-        return res.status(400).json({
-          error: 'No directory name provided',
-          status: 400
+    // Respond once all files are processed
+    // Delay response to ensure all files are moved
+    setTimeout(() => {
+      if (errorOccurred) {
+        res.status(500).json({
+          error: 'Error processing some files',
+          status: 500,
+        });
+      } else {
+        res.status(200).json({
+          message: 'Files uploaded successfully',
+          status: 200,
+          files: responseFiles
         });
       }
-  
-      const name = Array.isArray(req.body.name) ? req.body.name : [req.body.name];
-  
-      // Add the correct `fileNames` to each file object based on the index
-      const filesWithNames = req.files.map((file, index) => ({
-        ...file,
-        name: name[index] || name[0] 
-      }));
-  
-      // If everything goes well, send a success response
-      res.status(200).json({
-        message: 'Files uploaded successfully',
-        status: 200,
-        files: filesWithNames
-      });
-  
-    } catch (error) {
-      console.error('Error occurred during file upload:', error);
-  
-      res.status(500).json({
-        error: 'An error occurred during file upload',
-        status: 500,
-        details: error.message
-      });
-    }
+    }, 1000); // Adjust the delay if necessary
   });
+});
+
+
+  // // Define storage configuration for multer
+  // const storage = multer.diskStorage({
+  //   destination: function (req, file, cb) {
+  //       // Retrieve the directory name from the request body
+  //       // const directoryName = req.body.name; 
+  //       const directoryName = "catalog_file";
+  //       if (!directoryName) {
+  //           return cb(new Error('No directory name provided'), null);
+  //       }
+
+  //       // Construct the upload directory based on the directoryName
+  //       const baseDir = path.join('C:', 'Resources_ebss', directoryName);
+
+  //     // Ensure the directory exists; create it if it doesn't
+  //     if (!fs.existsSync(baseDir)) {
+  //       fs.mkdirSync(baseDir, { recursive: true });
+  //     }
+
+  //     cb(null, baseDir); 
+  //   },
+  //   filename: function (req, file, cb) {
+  //       cb(null, file.originalname);
+  //   }
+  // });
+
+  // const upload = multer({ storage: storage });
+
+  // app.post('/api/savefiles', upload.array('files'), (req, res) => {
+  //   try {
+  //     console.log('Request Body:', req.body);
+  //     console.log('Uploaded Files:', req.files);
+  
+  //     // Check if the request body does not contain the expected 'name' field
+  //     if (!req.body.name) {
+  //       return res.status(400).json({
+  //         error: 'No directory name provided',
+  //         status: 400
+  //       });
+  //     }
+  
+  //     const name = Array.isArray(req.body.name) ? req.body.name : [req.body.name];
+  
+  //     // Add the correct `fileNames` to each file object based on the index
+  //     const filesWithNames = req.files.map((file, index) => ({
+  //       ...file,
+  //       name: name[index] || name[0] 
+  //     }));
+  
+  //     // If everything goes well, send a success response
+  //     res.status(200).json({
+  //       message: 'Files uploaded successfully',
+  //       status: 200,
+  //       files: filesWithNames
+  //     });
+  
+  //   } catch (error) {
+  //     console.error('Error occurred during file upload:', error);
+  
+  //     res.status(500).json({
+  //       error: 'An error occurred during file upload',
+  //       status: 500,
+  //       details: error.message
+  //     });
+  //   }
+  // });
   
 
 
