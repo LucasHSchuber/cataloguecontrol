@@ -1,3 +1,9 @@
+- Express-Bild
+- Catalog Control & EBSS
+- Lucas Schuber
+- Software developer
+
+
 # Project Name
 
 This project consists of two main programs: **Catalog Control** and **EBSS**. Below you will find a brief overview of each program, setup instructions, and other relevant details.

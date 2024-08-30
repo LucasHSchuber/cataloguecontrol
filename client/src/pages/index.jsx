@@ -1625,7 +1625,7 @@ const Index = () => {
 
 			<ToastContainer 
 				position="bottom-left"
-				autoClose={4500}
+				autoClose={6000}
 				hideProgressBar={false}
 				// transition={Slide}
 				newestOnTop={false}

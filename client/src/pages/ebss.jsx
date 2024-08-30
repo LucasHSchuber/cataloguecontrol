@@ -39,15 +39,14 @@ const Ebss = () => {
     const [productType, setProductType] = useState('');
     const [productionType, setProductionType] = useState('');
     const [template, setTemplate] = useState('');
-    const [catalogueFile, setCatalogueFile] = useState(null); //variable for duocat & school catalogue
+    const [catalogueFile, setCatalogueFile] = useState(null); 
     const [logoActive, setLogoActive] = useState(false);
     const [logoFile, setLogoFile] = useState(null);
     const [productionActive, setProductionActive] = useState(false);
-
     //variables
     const [allowSEF, setAllowSEF] = useState(false);
     const [allowReduced, setAllowReduced] = useState(false);
-    const [overridePrice, setOverridePrice] = useState(false); //variable for duocat & photobook
+    const [overridePrice, setOverridePrice] = useState(false); 
     const [overrideReducedPrice, setOverrideReducedPrice] = useState(false);
     const [overrideProjectName, setOverrideProjectName] = useState(false);
     const [newPrice, setNewPrice] = useState('');
@@ -62,75 +61,169 @@ const Ebss = () => {
     const [formData, setFormData] = useState({});
     const [confirmationStatus, setConfirmationStatus] = useState({});
 
+    const [defaultValuesLoad, setDefaultValuesLoad] = useState(false);
+    const [defaultValues, setDefaultValues] = useState({});
+
     const [formError, setFormError] = useState({});
 
     const [loading, setloading] = useState(false);
 
 
-
-    // Fetch data from the API
-    useEffect(() => {
     // Fetch templates and production types
-    const fetchData = async () => {
+    useEffect(() => {
+        const fetchTemplates = async () => {
         try {
             const response = await axios.get(`/api/index.php/rest/pdfgen/productdata`, {
-                params: {
-                    product_type: product
-                }
+            params: { product_type: product }
             });
             setProductionTypes(response.data.production_types);
             setTemplates(response.data.templates);
             console.log('response:', response.data);
         } catch (error) {
-        console.error('Error fetching data:', error);
+            console.error('Error fetching data:', error);
         }
-    };
-    //Fetch current data 
-    const fetcProjecthData = async () => {
-        try {
+        };
+        fetchTemplates();
+    }, []);
+
+    // Fetch project data after templates and production types are fetched
+    useEffect(() => {
+        if (templates) {
+        const fetchProjectData = async () => {
+            try {
             const responseProjectData = await axios.get(`/api/index.php/rest/pdfgen/projectdata`, {
                 params: {
-                    // project_uuid: "9fba7984-ff60-4a44-8482-509024feb902",
-                    project_uuid: uuid,
-                    product_type: product
+                project_uuid: uuid,
+                product_type: product
                 }
             });
             console.log('responseProjectData:', responseProjectData.data.result);
             const projectData = responseProjectData.data.result;
-            if (projectData){
-                console.log("NOT NULL")
+            
+            if (projectData) {
+                console.log("NOT NULL");
                 const initialFormVariablesData = {};
-                console.log(projectData.data)
                 projectData.data.forEach((data) => {
-                    if (data.variable.type === "file" && data.value) {
-                        initialFormVariablesData[data.name] = data.value;
-                        console.log(data.name)
-                        console.log(data.value)
-                        setConfirmationStatus((prevStatus) => ({...prevStatus, [data.name]: data.value,}));
-                    }else{
-                        initialFormVariablesData[data.name] = data.value;
-                        setConfirmationStatus((prevStatus) => ({...prevStatus, [data.name]: data.value,}));
-                    }
-                })
+                if (data.variable.type === "file" && data.value) {
+                    initialFormVariablesData[data.name] = data.value;
+                    setConfirmationStatus((prevStatus) => ({ ...prevStatus, [data.name]: data.value }));
+                } else {
+                    initialFormVariablesData[data.name] = data.value;
+                    setConfirmationStatus((prevStatus) => ({ ...prevStatus, [data.name]: data.value }));
+                }
+                });
                 console.log('initialFormVariablesData', initialFormVariablesData);
                 setFormData({
-                    production_active: projectData.production_active,
-                    ...initialFormVariablesData
-                })
-                setSelectedProductionType(projectData.production_type.id)
-                setSelectedTemplate(projectData.template.id)
-                // projectData.template.variables.forEach((variable))
+                production_active: projectData.production_active,
+                ...initialFormVariablesData
+                });
+                setSelectedProductionType(projectData.production_type.id);
+                setSelectedTemplate(projectData.template.id);
             } else {
-                console.log("No project data fetched from /projectdata with id:", uuid)
+                // Use default data for formData 
+                console.log("No project data fetched from /projectdata with id:", uuid);
+                setDefaultValuesLoad(true);
+                const defaultValues = {};
+                console.log('templates', templates);
+                templates.forEach(template => {
+                    if (template.variables && template.variables.length > 0) {
+                    // Loop through each variable in the variables array of the template
+                    template.variables.forEach(variable => {
+                        console.log("name:", variable.name, 'Default Value:', variable.default_value);
+                        defaultValues[variable.name] = variable.default_value;
+                    });
+                    }
+                });
+                setFormData({
+                    ...defaultValues
+                });
+                setDefaultValues({
+                    ...defaultValues
+                })
             }
-        } catch (error) {
-        console.error('Error fetching project data:', error);
+            } catch (error) {
+            console.error('Error fetching project data:', error);
+            }
+        };
+        fetchProjectData();
         }
-    };
+    }, [templates, productionTypes]);
 
-    fetchData();
-    fetcProjecthData();
-    }, []);
+    // // Fetch data from the API
+    // useEffect(() => {
+    // // Fetch templates and production types
+    // const fetchData = async () => {
+    //     try {
+    //         const response = await axios.get(`/api/index.php/rest/pdfgen/productdata`, {
+    //             params: {
+    //                 product_type: product
+    //             }
+    //         });
+    //         setProductionTypes(response.data.production_types);
+    //         setTemplates(response.data.templates);
+    //         console.log('response:', response.data);
+    //     } catch (error) {
+    //     console.error('Error fetching data:', error);
+    //     }
+    // };
+    // //Fetch current data 
+    // const fetcProjecthData = async () => {
+    //     try {
+    //         const responseProjectData = await axios.get(`/api/index.php/rest/pdfgen/projectdata`, {
+    //             params: {
+    //                 // project_uuid: "9fba7984-ff60-4a44-8482-509024feb902",
+    //                 project_uuid: uuid,
+    //                 product_type: product
+    //             }
+    //         });
+    //         console.log('responseProjectData:', responseProjectData.data.result);
+    //         const projectData = responseProjectData.data.result;
+    //         if (projectData){
+    //             console.log("NOT NULL")
+    //             const initialFormVariablesData = {};
+    //             console.log("projectData:", projectData.data)
+    //             projectData.data.forEach((data) => {
+    //                 if (data.variable.type === "file" && data.value) {
+    //                     initialFormVariablesData[data.name] = data.value;
+    //                     console.log(data.name)
+    //                     console.log(data.value)
+    //                     setConfirmationStatus((prevStatus) => ({...prevStatus, [data.name]: data.value,}));
+    //                 }else{
+    //                     initialFormVariablesData[data.name] = data.value;
+    //                     setConfirmationStatus((prevStatus) => ({...prevStatus, [data.name]: data.value,}));
+    //                 }
+    //             })
+    //             console.log('initialFormVariablesData', initialFormVariablesData);
+    //             setFormData({
+    //                 production_active: projectData.production_active,
+    //                 ...initialFormVariablesData
+    //             })
+    //             setSelectedProductionType(projectData.production_type.id)
+    //             setSelectedTemplate(projectData.template.id)
+    //             // projectData.template.variables.forEach((variable))
+    //         } else {
+    //             console.log("No project data fetched from /projectdata with id:", uuid)
+
+    //             // If no project data, use template data for defaults
+    //             console.log('templates', templates);
+    //             if (templates && templates.variables) {
+    //                 const defaultValues = {};
+    //                 templates.variables.forEach(variable => {
+    //                     defaultValues[variable.name] = variable.default_value;
+    //                 });
+    //                 setFormData({
+    //                     ...defaultValues
+    //                 });
+    //             }
+    //         }
+    //     } catch (error) {
+    //     console.error('Error fetching project data:', error);
+    //     }
+    // };
+
+    // fetchData();
+    // fetcProjecthData();
+    // }, []);
 
 
     // Handle changes in production type select
@@ -144,7 +237,9 @@ const Ebss = () => {
     // Handle changes in template select
     const handleTemplateChange = (e) => {
         setSelectedTemplate(e.target.value);
-        setFormData({}); 
+        if (defaultValuesLoad){
+            setFormData({...defaultValues}); 
+        }
         setConfirmationStatus({}); 
         // Clear errorForm
         setFormError((prevData) => ({...prevData, template: false}))
@@ -712,7 +807,7 @@ const Ebss = () => {
       
       <ToastContainer 
         position="bottom-left"
-        autoClose={4500}
+        autoClose={false}
         hideProgressBar={false}
         // transition={Slide}
         newestOnTop={false}

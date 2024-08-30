@@ -41,15 +41,18 @@ const pool = mysql.createPool(dbConfig);
 
 // Route to hanlde storing files
 app.post('/api/savefiles', (req, res) => {
-  const form = new formidable.IncomingForm();
+  const form = new formidable.IncomingForm({
+    uploadDir: path.join(__dirname, 'temp'),
+    keepExtensions: true, // Keep the file extensions
+    maxTotalFileSize: 10 * 1024 * 1024 * 1024, // 10GB total size
+    maxFileSize: 10 * 1024 * 1024 * 1024, // 10GB for a single file
+    maxFieldsSize: 10 * 1024 * 1024 * 1024, // 10GB max for form fields
+  });
 
-  // Set the directory where files will be temporarily stored
-  const tempDir = path.join(__dirname, 'temp');
-  if (!fs.existsSync(tempDir)) {
-    fs.mkdirSync(tempDir);
+  // Ensure the temporary upload directory exists
+  if (!fs.existsSync(form.uploadDir)) {
+    fs.mkdirSync(form.uploadDir);
   }
-  form.uploadDir = tempDir;
-  form.keepExtensions = true; // Keep the file extensions
 
   form.parse(req, (err, fields, files) => {
     if (err) {
@@ -140,6 +143,9 @@ app.post('/api/savefiles', (req, res) => {
     }, 1000); // Adjust the delay if necessary
   });
 });
+
+
+
 
 
   // // Define storage configuration for multer
