@@ -296,6 +296,13 @@ const Ebss = () => {
     const handleSubmit = async (event) => {
         event.preventDefault();
 
+        //check for internet connection
+        if (!navigator.onLine) {
+            // Show toast notification if offline
+            toast.error('You are offline! Please check your internet connection and try again.')
+            return;   
+        }
+
         // ---Validation checks---
         let hasError = false;
         const missingFields = [];
@@ -419,18 +426,18 @@ const Ebss = () => {
                     };
                     console.log("data: ", data);
 
-                    // const fileNames = responseSaveFilesToDisk.files.map(file => file.filename).join(', '); // Create the array to display in the toaster
+                    const fileNames = responseSaveFilesToDisk.files.map(file => file.filename).join(', '); 
                    // Request to send data to REST API
                     axios.post(`/api/index.php/rest/pdfgen/projectdata`, data)
                     .then(response => {
                         console.log('response:', response.data); 
                         setloading(false);
-                        toast.success(`Successfully Saved to EBSS!`);
+                        toast.success(`Successfully saved data and ${fileNames.length > 0 ? "files:" : "file:"} ${fileNames}, to EBSS!`);
                     })
                     .catch(error => {
                         console.error('Error posting data:', error);
                         setloading(false);
-                        toast.error("Failed to Save to EBSS");
+                        toast.error("Failed to save to EBSS");
                     });
 
                 } else if (responseSaveFilesToDisk.status === 500){
@@ -479,13 +486,13 @@ const Ebss = () => {
             .then(response => {
                 console.log('response:', response.data); 
                 setloading(false);
-                toast.success(`Successfully Saved to EBSS!`);
+                toast.success(`Successfully saved data to EBSS!`);
                 setFormError({})
             })
             .catch(error => {
                 console.error('Error posting data:', error);
                 setloading(false);
-                toast.error("Failed to Save to EBSS");
+                toast.error("Failed to save data to EBSS");
             });
         }
     };
