@@ -42,7 +42,8 @@ const Index = () => {
 	const [loading, setLoading] = useState(false);
 	const [loadingD2, setLoadingD2] = useState(false);
 	const [loadingLivonia, setLoadingLivonia] = useState(false);
-
+	const [loadingSendToEngine, setLoadingSendToEngine] = useState(false);
+	
 	const [processedCount, setProcessedCount] = useState(0);
 	
 	const [selectedIndices, setSelectedIndices] = useState([]);
@@ -74,7 +75,7 @@ const Index = () => {
 	const [showD2SuccessMessage, setShowD2SuccessMessage] = useState(false);
 	const [showErrorLivoniaMessage, setShowErrorLivoniaMessage] = useState(false);
 	const [showSuccessLivoniaMessage, setShowSuccessLivoniaMessage] = useState(false);
-
+setLoadingSendToEngine
 	const [refreshProjects, setRefreshProjects] = useState(false);
 
 	const [triggerSource, setTriggerSource] = useState(false);
@@ -914,6 +915,304 @@ const Index = () => {
 		}
 	};
 
+
+
+	
+	 //---------------------------------------- SEND TO ENGINE FUNCTION  ----------------------------------------
+
+	 const runSendToEngine = async (data) => {
+		console.log('-----------------------------');
+		console.log('-----------------------------');
+		console.log('SEND TO ENGINE TRIGGGERED');
+		console.log('-----------------------------');
+		console.log('-----------------------------');
+		console.log('selectedData', data);
+
+		// getting all project_uuid from data array
+		const dataUuids = data.map(item => item.data.uuid);
+		console.log("Sending dataUuids to backend:", dataUuids);
+		let token = ocrreserveToken;		
+		try {
+			const response = await axios.post(
+				`${baseURL}/api/pdfgen_project_data`,
+				{ dataUuids },
+				{
+				  headers: {
+					Authorization: `Token ${token}`,
+				  },
+				}
+			);
+			console.log('Response from pdfgen_project_data:', response.data);
+			if (response.data.length < data.length){
+				toast.error("All selected projects must first go through EBSS and be production active ")
+				return;
+			}
+		} catch (error) {
+			console.log('Error fetching data from pdfgen_project_data', error);
+			toast.error("Send to Engine: Error fetching data from pdfgen_project_data")
+			return;
+		}	
+
+
+		//loopa igenom selecteddata (data) och plocka ut varje tuppel från net_catalogue_orders
+		for (const item of data) {
+			let project_id = item.data.uuid;
+			console.log(`project_id of index ${item.index}:` , project_id);
+			let orders = [];
+			try {
+				const response = await axios.get(
+					`${baseURL}/api/net_catalogue_orders/livonia`,
+					{
+						params: {
+							project_id: project_id
+						},
+					}
+				); 
+				// console.log('Response', response.data);
+				orders = response.data;       
+				console.log('amount orders', orders.length);
+
+				//If orders are 0, print error
+				if (orders.length === 0) {
+					console.log("There are no current orders to process!");
+					// setShowErrorLivoniaMessage(true);
+					// setTimeout(() => {
+					// 	setShowErrorLivoniaMessage(false);
+					// }, 3000);
+					toast.error("Send to Engine Error: There are no current orders to process");
+					setLoadingSendToEngine(false);
+					return;
+				} else {
+					setLoadingSendToEngine(true);
+				}
+
+				//Anropar REST API för att hämta OCR-nummer
+				let ocrArray = [];
+				let token = ocrreserveToken;
+				try {
+					const data = {
+						portaluuid: item.data.portaluuid,
+						count: orders.length,
+						group_id: 3,
+						test_mode: true,
+					};
+					const respOcArray = await axios.post(
+						"/api/index.php/rest/ocr/reserve",
+							data,
+						{
+							headers: {
+								Authorization: `Token ${token}`, 
+							},
+						}
+					);
+					// console.log("respOcArray", respOcArray);
+					ocrArray = respOcArray.data.result;
+				} catch (error) {
+					console.log("Error getting OCRnumbers from rest API", error);
+				}
+				console.log("ocrArray", ocrArray);
+
+				const deliveryNameFix = {
+					"2dba368b-6205-11e1-b101-0025901d40ea": "Till målsman för ",
+					"1cfa0ec6-d7de-11e1-b101-0025901d40ea": "",
+					"8d944c93-9de4-11e2-882a-0025901d40ea": "",
+					"f41d5c48-5af3-94db-f32d-3a51656b2c53": "",
+					"da399c45-3cf2-11ea-b287-ac1f6b419120": ""
+				};
+
+				let cc = "se";
+				if (item.data.portaluuid === "1cfa0ec6-d7de-11e1-b101-0025901d40ea") {
+					cc = 'fi';
+				} else if (item.data.portaluuid === "8d944c93-9de4-11e2-882a-0025901d40ea") {
+						cc = 'dk';
+				} else if (item.data.portaluuid === "f41d5c48-5af3-94db-f32d-3a51656b2c53") {
+						cc = 'no';
+				} else if (item.data.portaluuid === "da399c45-3cf2-11ea-b287-ac1f6b419120") {
+						cc = 'de';
+				}
+				console.log("country code: ", cc);
+
+
+	      		let i = 0;
+				for (const order of orders) {
+					// console.log("orders length:", orders.length)
+					const invoicenumber = await getInvoiceNumber(order.portaluuid);
+					// console.log("Invoice number from getInvoiceNumber method:", invoicenumber);
+
+					if (order.subjectname === order.deliveryname) {
+							order.deliveryname = deliveryNameFix[order.portaluuid] + order.subjectname;
+							console.log("ALERT! subjectname = deliveryname");
+					}
+
+					// Insert into net_orders
+					const orderData = {
+						orderuuid: ocrArray[i].slice(0,8) + "-cat",
+						portaluuid: order.portaluuid,
+						externalid: ocrArray[i].slice(0,8),
+						co: ocrArray[i],
+						invoicenumber: invoicenumber, 
+						countrycode:  cc,
+						originating: order.originating,
+						override_sum: null,
+						baseprice: order.price,
+						discount: 0,
+						deliveryprice: order.deliveryprice,
+						fee: 0,
+						paid: 0,
+						vatprocent: order.vatprocent,
+						vatvalue: order.vatvalue,
+						deliveryname: order.deliveryname,
+						deliveryaddress: order.deliveryaddress,
+						deliverypostalcode: order.deliverypostalcode,
+						deliverycity: order.deliverycity,
+						deliverytype: "BYMAIL",
+						paymenttype: "INVOICE",
+						socialnumber: order.socialnumber,
+						subjectuuid: order.subjectuuid,
+						subjectname: order.subjectname,
+						subjectemail: null,
+						subjectphone: null,
+						project: order.project,
+						project_id: order.project_id,
+						team: order.team,
+						username: order.username,
+						useremail: order.useremail,
+						usermobile: order.usermobile,
+						sheet_count: 0,
+						printed: null,
+						posted: null, 
+						post_weight: null,
+						cancelled: null,
+						expiration_days: 30,
+						debtfeedate: null,
+						debtfeedate2: null,
+						collection: null,
+						tags: null,
+						notes: null
+					};
+					console.log("orderData", orderData);
+          
+					try {
+						const responseOrder = await axios.post(`${baseURL}/api/net_orders`, {
+							orderData
+						})
+						// console.log("response orderData", responseOrder);
+					} catch (error) {
+						console.log("Error inserting orderData to database", error);
+					}
+
+					//insert into net_products
+					const productData = {
+						orderuuid: ocrArray[i].slice(0,8) + "-cat",
+						packagedescription: null,
+						description: 'Catalog',
+						price: order.price,
+						quantity: 1,
+						vatprocent: 6,
+						vatvalue:  order.vatvalue, 
+						return_factor: 1,
+						package_num: 0,
+						deleted: 0,
+						created: new Date().toISOString()
+					};
+					console.log('productData', productData);
+
+					try {
+						const responseProduct = await axios.post(`${baseURL}/api/net_products`, {
+							productData: productData
+						})
+						// console.log("Response productData", responseProduct);
+					} catch (error) {
+						console.log("Error inserting productData into database", error);
+					}
+
+					// Adding tupples to rest API "/pdfgen/enqueue" 
+					try {
+						const dataToSend = {
+							project_uuid: order.project_id,
+							product_type: "Catalogue",
+							identifier: ocrArray[i].slice(0,8) + "-cat",
+							priority: 0,
+							force: 0
+						};
+						console.log("Data sending to /pdfgen/enqueue", dataToSend);
+						let token = ocrreserveToken;
+						let respEnqueue = await axios.post(
+							"/api/index.php/rest/pdfgen/enqueue",
+							dataToSend,
+							{
+								headers: {
+									Authorization: `Token ${token}`, 
+								},
+							}
+						);
+						// console.log("respOcArray", respOcArray);
+						respEnqueue = respEnqueue.data;
+						console.log("respEnqueue", respEnqueue);
+					} catch (error) {
+						console.log("Error adding tupples to rest API /pdfgen/enqueue", error);
+						toast.error(`Send to Engine: Error adding tupples to rest API /pdfgen/enqueue!`);
+					}
+					
+
+					//Updating status in net_catalogue_orders
+					try {
+						const responseStatus = await axios.post(`${baseURL}/api/net_catalogue_orders/statusupdate`, {
+							orderuuid: order.orderuuid
+						})
+						// console.log("Successfully update status in net_catalogue_orders", responseStatus);
+					} catch (error) {
+						console.log("Error updating status in net_catalogue_orders", error);
+					}
+
+					i = i + 1; // increase counter
+
+				}
+			} catch (error) {
+				console.log('Error fetching project data from net_catalogue_orders', error);
+			}
+
+			console.log(item.data.name + "done!");
+			console.log("------------------------------------");
+			const dataMessage = {
+				job_uuid: item.data.uuid,
+				insertedOrdersAmount: orders.length,
+				message: orders.length > 0 ? orders.length + " orders inserted successfully" : "Error: 0 orders inserted",
+				dateTime: new Date().toLocaleString(),
+				selectedData: item
+			}
+			console.log("dataMessage: ", dataMessage);
+			// setUpdatedDataMessageLivonia((prevState) => [...prevState, dataMessage]);
+			
+		}
+	
+		//Finish Send to Engine function
+		finishSendToEngine()
+	}
+
+
+	//method triggered when livonia function is done running
+	const finishSendToEngine = () => {
+		console.log("------------------------------------");
+		console.log("Send to Engine finished running!");
+		console.log("------------------------------------");
+		setUpdatedDataLength(0);
+		
+		setTimeout(() => {
+			setLoadingSendToEngine(false);
+			// setUpdatedDataLivoniaLength((prevState) => prevState + selectedData.length);
+			setSelectedData([]);
+			setSelectedIndices([]);
+			setUpdatedDataMessage([]);
+			setTriggerSource(false);
+		}, 1000);
+		toast.success(`Send to Engine: Send to Engine has run successfully!`);
+
+		setRefreshProjects(!refreshProjects);
+	}
+
+
+
 	//-------- CHECKING D2 COLUMN  --------
 
 	// Function to check if any object in selectedData has D2 === null
@@ -1110,19 +1409,18 @@ const Index = () => {
 	
 	return (
 		<div className="wrapper">
-			{(loadingD2 || loadingLivonia) && (
+			{(loadingD2 || loadingLivonia || loadingSendToEngine ) && (
 					<div className="loader-D2">
 							<h6 className="loader-text">
-									Please wait while {loadingD2 ? "D2" : "Livonia"} is running... 
+									Please wait while {loadingD2 ? "D2 is running..." : loadingLivonia ? "Livonia is running..." : "sending to Engine..."}  
 							</h6>
-							{loadingD2 ? <p>{updatedDataMessage.length}/{selectedData.length + updatedDataLength} </p> : <p> {updatedDataMessageLivonia.length}/{triggerSource ? updatedDataMessage.length + updatedDataLivoniaLength : selectedData.length + updatedDataLivoniaLength} </p>}
+							{loadingD2 ? <p>{updatedDataMessage.length}/{selectedData.length + updatedDataLength} </p> : loadingLivonia ? <p> {updatedDataMessageLivonia.length}/{triggerSource ? updatedDataMessage.length + updatedDataLivoniaLength : selectedData.length + updatedDataLivoniaLength} </p> : <p>STE</p> }
 							<RingLoader className="loader-spinner" color={'#123abc'} size={50} />
 					</div>
 			)}
-			<div className="page-wrapper" style={{ opacity: loadingD2 || loadingLivonia ? '0.1' : '' }}>
+			<div className="page-wrapper" style={{ opacity: loadingD2 || loadingLivonia || loadingSendToEngine ? '0.1' : '' }}>
 			<h4 className='' style={{ fontWeight: "700", textDecoration: "underline" }}>Catalogue Control</h4>
 			<h6 className='mb-5' style={{ fontSize: "1.1em", fontWeight: "400" }}>D2, Send to Engine, D2 and EBBS</h6>
-
 
 
 				<div className="filter-container">
@@ -1427,7 +1725,10 @@ const Index = () => {
 							>
 								Run D2
 							</button>
-							<button className="mr-2 button">Send to Engine</button>
+							<button 
+								className="mr-2 button"
+								
+							>Send to Engine</button>
 							<button
 								className="button"
 								disabled={
@@ -1512,9 +1813,6 @@ const Index = () => {
 									<td>
 										<button className="mr-2 table-button" onClick={() => openInEBSS(data.data.uuid, data.data.name)}>Open in EBSS</button>
 									</td>
-									{/* <td>
-										<button className="mr-2 table-button">Send to Engine</button>
-									</td> */}
 								</tr>
 							))}
 						</tbody>
@@ -1533,14 +1831,23 @@ const Index = () => {
 						>
 							Run D2
 						</button>
-						<button className="mr-2 button">Send to Engine</button>
+						<button 
+							className="mr-2 button"
+							onClick={() => runSendToEngine(selectedData)}
+							disabled={errorMessageLivoniaButton}
+							title={
+								errorMessageLivoniaButton
+									? "At least one of your selected projects needs to be run by D2 in order to run 'Send to Engine'"
+									: 'Send to Engine'
+							}
+						>Send to Engine</button>
 						<button
 							className="button"
 							disabled={errorMessageLivoniaButton}
 							onClick={() => runLivonia(selectedData)}
 							title={
 								errorMessageLivoniaButton
-									? "At least one of your selected projects needs to be run by D2 in order to click 'Livonia'"
+									? "At least one of your selected projects needs to be run by D2 in order to run 'Livonia'"
 									: 'Livonia'
 							}
 						>
@@ -1563,6 +1870,12 @@ const Index = () => {
 									style={{ color: 'black', fontSize: '0.9em' }}
 								>
 									*Livonia button: Not all projects has been run by D2
+								</h6>
+								<h6
+									className="mt-2"
+									style={{ color: 'black', fontSize: '0.9em' }}
+								>
+									*Send to Engine button: Not all projects has been run by D2
 								</h6>
 							</div>
 						)}

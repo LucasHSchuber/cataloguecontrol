@@ -20,7 +20,6 @@ const RESOURCES_DIR = process.env.RESOURCES_DIR || 'Resources_ebss';
 console.log(`Base Directory: ${BASE_DIR}`);
 console.log(`Resources Directory: ${RESOURCES_DIR}`);
 
-
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
@@ -283,6 +282,31 @@ app.post('/api/savefiles', (req, res) => {
       }
     });
   });
+
+
+  
+  // POST - API endpoint to fetch data from pdfgen_project_data
+  app.post("/api/pdfgen_project_data", (req, res) => {
+    const { dataUuids } = req.body; 
+
+    console.log("Received dataUuids:", dataUuids);
+
+    if (!dataUuids || !Array.isArray(dataUuids) || dataUuids.length === 0) {
+      return res.status(400).send("Missing or invalid dataUuids parameter");
+    }
+
+    const query = "SELECT * FROM pdfgen_project_data WHERE production_active = 1 AND project_uuid IN (?)";
+
+    pool.query(query, [dataUuids], (err, results) => {
+      if (err) {
+        console.error("Error fetching data from pdfgen_project_data:", err);
+        return res.status(500).send("Error fetching data from pdfgen_project_data");
+      } else {
+        return res.json(results); 
+      }
+    });
+  });
+
 
   // GET - API endpoint to fetch subjectuuids from net_catalogue_orders from MySQL
   app.get("/api/net_catalogue_orders/livonia", (req, res) => {
