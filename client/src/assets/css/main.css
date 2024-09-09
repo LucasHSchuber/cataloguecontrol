@@ -139,12 +139,15 @@
   padding: 10em 20em 6em 20em; 
   width: 100% !important;
 }
-
-.selected-data-table th,
+.selected-data-table th{
+  padding: 3px 12px;
+}
 .selected-data-table td {
   padding: 1px 12px;
 }
-
+.selected-data-table th{
+  font-size: 1.15em;
+} 
 .selected-data-table tbody tr:hover {
   background-color: #ffffff !important;
   cursor: pointer;

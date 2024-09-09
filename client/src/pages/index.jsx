@@ -54,6 +54,8 @@ const Index = () => {
 	const [updatedDataLength, setUpdatedDataLength] = useState(0);
 	const [updatedDataMessageLivonia, setUpdatedDataMessageLivonia] = useState([]);
 	const [updatedDataLivoniaLength, setUpdatedDataLivoniaLength] = useState(0);
+	const [updatedDataMessageSendToEngine, setUpdatedDataMessageSendToEngine] = useState([]);
+	const [updatedDataSendToEngineLength, setUpdatedDataSendToEngineLength] = useState(0);
 	const [uuidArray, setUuidArray] = useState([]);
 
 	const [isProcessingComplete, setIsProcessingComplete] = useState(false);
@@ -75,7 +77,7 @@ const Index = () => {
 	const [showD2SuccessMessage, setShowD2SuccessMessage] = useState(false);
 	const [showErrorLivoniaMessage, setShowErrorLivoniaMessage] = useState(false);
 	const [showSuccessLivoniaMessage, setShowSuccessLivoniaMessage] = useState(false);
-setLoadingSendToEngine
+
 	const [refreshProjects, setRefreshProjects] = useState(false);
 
 	const [triggerSource, setTriggerSource] = useState(false);
@@ -141,7 +143,6 @@ setLoadingSendToEngine
 		console.log('-----------------------------');
 		setLoadingD2(true);
 		setUuidArray([]);
-		setUpdatedDataMessageLivonia([]);
 
 		try {
 			// Using Promise.all to await all requests concurrently
@@ -530,18 +531,7 @@ setLoadingSendToEngine
 					project_id: item.job_uuid,
 				})
 			);
-
 			await Promise.all(updatePromises);
-			// console.log("uppdateNetCatalogueProjects response: ", updatePromises);
-
-			// console.log('---');
-			// console.log('All projects updated successfully');
-			// console.log('---');
-
-			// const uuidArray = selectedData.map(item => item.data.uuid);
-			// console.log('UUID Array:', uuidArray);
-			// setUuidArray(uuidArray);
-
 			setProcessedCount((prevCount) => prevCount + 1);
 			// finishD2();
 		} catch (error) {
@@ -561,9 +551,13 @@ setLoadingSendToEngine
 	const finishD2 = () => {
 		console.log('All objects have been processed. Triggering finishD2.');
 		console.log('---');
+		setUpdatedDataMessageLivonia([]);
+		setUpdatedDataMessageSendToEngine([]);
+
 		setProcessedCount(0);
 		setUpdatedData(selectedData);
 		setUpdatedDataLivoniaLength(0);
+		setUpdatedDataSendToEngineLength(0);
 
 		setSearchString('');
 		setRefreshProjects(!refreshProjects);
@@ -618,10 +612,6 @@ setLoadingSendToEngine
 				//If orders are 0, print error
 				if (orders.length === 0) {
 					console.log("There are no current orders to process!");
-					// setShowErrorLivoniaMessage(true);
-					// setTimeout(() => {
-					// 	setShowErrorLivoniaMessage(false);
-					// }, 3000);
 					toast.error("Livonia Error: There are no current orders to process");
 					setLoadingLivonia(false);
 					return;
@@ -851,14 +841,17 @@ setLoadingSendToEngine
 		console.log("------------------------------------");
 		console.log("Livonia finished running!");
 		console.log("------------------------------------");
+		setUpdatedDataMessage([]);
+		setUpdatedDataMessageSendToEngine([]);
+
 		setUpdatedDataLength(0);
+		setUpdatedDataSendToEngineLength(0);
 		
 		setTimeout(() => {
 			setLoadingLivonia(false);
 			setUpdatedDataLivoniaLength((prevState) => prevState + selectedData.length);
 			setSelectedData([]);
 			setSelectedIndices([]);
-			setUpdatedDataMessage([]);
 			setTriggerSource(false);
 			setIsSeparateCSV(false);
 		}, 1000);
@@ -975,10 +968,6 @@ setLoadingSendToEngine
 				//If orders are 0, print error
 				if (orders.length === 0) {
 					console.log("There are no current orders to process!");
-					// setShowErrorLivoniaMessage(true);
-					// setTimeout(() => {
-					// 	setShowErrorLivoniaMessage(false);
-					// }, 3000);
 					toast.error("Send to Engine Error: There are no current orders to process");
 					setLoadingSendToEngine(false);
 					return;
@@ -1182,28 +1171,30 @@ setLoadingSendToEngine
 				selectedData: item
 			}
 			console.log("dataMessage: ", dataMessage);
-			// setUpdatedDataMessageLivonia((prevState) => [...prevState, dataMessage]);
-			
+			setUpdatedDataMessageSendToEngine((prevState) => [...prevState, dataMessage]);
 		}
-	
+
 		//Finish Send to Engine function
 		finishSendToEngine()
 	}
 
 
-	//method triggered when livonia function is done running
+	//method triggered when send to engine function is done running
 	const finishSendToEngine = () => {
 		console.log("------------------------------------");
 		console.log("Send to Engine finished running!");
 		console.log("------------------------------------");
+		setUpdatedDataMessage([]);
+		setUpdatedDataMessageLivonia([]);
+
 		setUpdatedDataLength(0);
+		setUpdatedDataLivoniaLength(0);
 		
 		setTimeout(() => {
 			setLoadingSendToEngine(false);
-			// setUpdatedDataLivoniaLength((prevState) => prevState + selectedData.length);
+			setUpdatedDataSendToEngineLength((prevState) => prevState + selectedData.length);
 			setSelectedData([]);
 			setSelectedIndices([]);
-			setUpdatedDataMessage([]);
 			setTriggerSource(false);
 		}, 1000);
 		toast.success(`Send to Engine: Send to Engine has run successfully!`);
@@ -1267,16 +1258,8 @@ setLoadingSendToEngine
 		setSelectedData((prevSelectedData) => {
 			if (selectedIndices.includes(data.uuid)) {
 				// Remove data if index is already selected
-				// setShowRemovedRowMessage(true);
-				// setTimeout(() => {
-				// 	setShowRemovedRowMessage(false);
-				// }, 500);
 				return prevSelectedData.filter((item) => item.data.uuid !== data.uuid);
 			} else {
-				// setShowAddedRowMessage(true);
-				// setTimeout(() => {
-				// 	setShowAddedRowMessage(false);
-				// }, 500);
 				// Add data if index is newly selected
 				console.log('selected data', selectedData);
 				return [...prevSelectedData, { index, data }];
@@ -1305,21 +1288,10 @@ setLoadingSendToEngine
 		setSelectedIndices([]);
 		setUuidArray([]);
 		setSelectedData([]);
-		// setUpdatedDataMessage([]);
-		// setUpdatedDataMessageLivonia([]);
-		// setShowRemovedRowMessage(true);
-		// setTimeout(() => {
-		// 	setShowRemovedRowMessage(false);
-		// }, 500);
 	};
 
 	const removeSelectedData = (indexToRemove) => {
 		console.log('Index to remove:', indexToRemove);
-		// setShowRemovedRowMessage(true);
-		// setTimeout(() => {
-		// 	setShowRemovedRowMessage(false);
-		// }, 500);
-
 		setSelectedData((prevSelectedData) =>
 			prevSelectedData.filter((item) => item.data.uuid !== indexToRemove)
 		);
@@ -1414,14 +1386,14 @@ setLoadingSendToEngine
 							<h6 className="loader-text">
 									Please wait while {loadingD2 ? "D2 is running..." : loadingLivonia ? "Livonia is running..." : "sending to Engine..."}  
 							</h6>
-							{loadingD2 ? <p>{updatedDataMessage.length}/{selectedData.length + updatedDataLength} </p> : loadingLivonia ? <p> {updatedDataMessageLivonia.length}/{triggerSource ? updatedDataMessage.length + updatedDataLivoniaLength : selectedData.length + updatedDataLivoniaLength} </p> : <p>STE</p> }
+							{loadingD2 ? <p>{updatedDataMessage.length}/{selectedData.length + updatedDataLength} </p> : loadingLivonia ? <p> {updatedDataMessageLivonia.length}/{triggerSource ? updatedDataMessage.length + updatedDataLivoniaLength : selectedData.length + updatedDataLivoniaLength} </p> : loadingSendToEngine ? <p> {updatedDataMessageSendToEngine.length}/{triggerSource ? updatedDataMessage.length + updatedDataSendToEngineLength : selectedData.length + updatedDataSendToEngineLength} </p> : "" }
 							<RingLoader className="loader-spinner" color={'#123abc'} size={50} />
 					</div>
 			)}
-			<div className="page-wrapper" style={{ opacity: loadingD2 || loadingLivonia || loadingSendToEngine ? '0.1' : '' }}>
-			<h4 className='' style={{ fontWeight: "700", textDecoration: "underline" }}>Catalogue Control</h4>
-			<h6 className='mb-5' style={{ fontSize: "1.1em", fontWeight: "400" }}>D2, Send to Engine, D2 and EBBS</h6>
 
+			<div className="page-wrapper" style={{ opacity: loadingD2 || loadingLivonia || loadingSendToEngine ? '0.1' : '' }}>
+				<h4 className='' style={{ fontWeight: "700", textDecoration: "underline" }}>Catalogue Control</h4>
+				<h6 className='mb-5' style={{ fontSize: "1.1em", fontWeight: "400" }}>D2, Send to Engine, D2 and EBBS</h6>
 
 				<div className="filter-container">
 					<label>
@@ -1623,22 +1595,26 @@ setLoadingSendToEngine
 					</div>
 				</div> */}
 
-				{/* updated data table (LIVONIA AND D2) */}
-				{((updatedDataMessage && updatedDataMessage.length > 0) || (updatedDataMessageLivonia && updatedDataMessageLivonia.length > 0)) && (
+				{/* updated data table (LIVONIA AND D2 AND SEND TO ENGINE) */}
+				{((updatedDataMessage && updatedDataMessage.length > 0) || (updatedDataMessageLivonia && updatedDataMessageLivonia.length > 0) || (updatedDataMessageSendToEngine && updatedDataMessageSendToEngine.length > 0)) && (
 					<div className="mt-4 updated-data-box">
-						<h6 style={{ textDecoration: "underline" }}><b>{updatedDataMessage.length > 0 ? "D2 log:" : updatedDataMessageLivonia.length > 0 ? "Livonia log:" : ""}</b></h6>
-						<button
-							style={{ float: 'right', border: 'none' }}
-							onClick={() => {
-								setUpdatedDataMessage([]);
-								setUpdatedDataMessageLivonia([]);
-								setUpdatedDataLength(0);
-								setUpdatedDataLivoniaLength(0);
-							  }}
-							className="remove-selected-data-button"
-						>
-							<FontAwesomeIcon icon={faTimes} title="Remove list" />
-						</button>
+						<div className=' mb-3 d-flex justify-content-between'>
+							<h6 style={{ textDecoration: "underline" }}><b>{updatedDataMessage.length > 0 ? "D2 log:" : updatedDataMessageLivonia.length > 0 ? "Livonia log:" : updatedDataMessageSendToEngine.length > 0 ? "Send to Engine Log:" : ""}</b></h6>
+							<button
+								style={{ float: 'right', border: 'none' }}
+								onClick={() => {
+									setUpdatedDataMessage([]);
+									setUpdatedDataMessageLivonia([]);
+									setUpdatedDataMessageSendToEngine([]);
+									setUpdatedDataLength(0);
+									setUpdatedDataLivoniaLength(0);
+									setUpdatedDataSendToEngineLength(0);
+								}}
+								className="remove-selected-data-button"
+							>
+								<FontAwesomeIcon icon={faTimes} title="Remove list" />
+							</button>
+						</div>
 						<table className="updated-data-table">
 							<thead>
 								<tr>
@@ -1661,6 +1637,14 @@ setLoadingSendToEngine
 										<th>Msg</th>
 										<th>Completed</th>
 									</>
+									) : updatedDataMessageSendToEngine && updatedDataMessageSendToEngine.length > 0 ? (
+										<>
+											<th>Project ({updatedDataMessageSendToEngine.length})</th>
+											<th>Inserted orders</th>
+											<th></th>
+											<th>Msg</th>
+											<th>Completed</th>
+										</>
 									) : null}
 								</tr>
 							</thead>
@@ -1712,6 +1696,23 @@ setLoadingSendToEngine
 										<td>at {data.dateTime.substring(11,19).replace(/-/g, '/')}</td>
 									</tr>
 								))}
+								{updatedDataMessageSendToEngine && updatedDataMessageSendToEngine.map((data) => (
+									<tr key={data.selectedData.data.uuid}>
+										<td data-uuid={data.selectedData.data.uuid}>
+											{data.selectedData.data.name}
+										</td>
+										<td>
+											{data.insertedOrdersAmount} 
+										</td>
+										<td>
+											<button className="mr-2 table-button" onClick={() => openInEBSS(data.selectedData.data.uuid)}>
+												Open in EBSS
+											</button>
+										</td>
+										<td>{data.message}</td>
+										<td>at {data.dateTime.substring(11,19).replace(/-/g, '/')}</td>
+									</tr>
+								))}
 							</tbody>
 						</table>
 						<div className="mt-3">
@@ -1720,19 +1721,31 @@ setLoadingSendToEngine
 								className="mr-2 button runD2"
 								disabled={
 									updatedDataMessage.some((item) => item.insertedOrdersAmount > 0) ||
-									updatedDataMessageLivonia.length > 0
+									updatedDataMessageLivonia.length > 0 ||
+									updatedDataMessageSendToEngine.length > 0
 								}		
 							>
 								Run D2
 							</button>
-							<button 
+							<button
 								className="mr-2 button"
-								
-							>Send to Engine</button>
+								disabled={
+									updatedDataMessageSendToEngine.length > 0 ||
+									updatedDataMessageLivonia.length > 0
+								}								
+								onClick={() => {
+									setTriggerSource(true);
+									const dataToSend = updatedDataMessage.length > 0 ? updatedDataMessage : updatedDataMessageSendToEngine;
+									runSendToEngine(dataToSend.map(data => data.selectedData));
+								}}
+							>
+								Send to Engine
+							</button>
 							<button
 								className="button"
 								disabled={
-									updatedDataMessageLivonia.length > 0
+									updatedDataMessageLivonia.length > 0 || 
+									updatedDataMessageSendToEngine.length > 0
 								}								
 								onClick={() => {
 									setTriggerSource(true);
@@ -1761,7 +1774,7 @@ setLoadingSendToEngine
 			{selectedData && selectedData.length > 0 && (
 				<div
 					className="mt-3 selected-data-box"
-					style={{ opacity: loadingD2 || loadingLivonia? '0.1' : '' }}
+					style={{ opacity: loadingD2 || loadingLivonia || loadingSendToEngine ? '0.1' : '' }}
 				>
 					<table className="selected-data-table">
 						<thead>

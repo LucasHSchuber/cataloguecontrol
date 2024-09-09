@@ -36,10 +36,12 @@
 
 .remove-selected-data-button{
     background-color: rgb(242, 242, 242);
-    padding: 0.4em;
+    font-size: 1.2em;
+    padding: 0.3em 0.5em;
     transition: 0.2s;
     border-radius: 4px;
     cursor: pointer;
+    margin-top: 0.15em;
 }
 .remove-selected-data-button:hover{
     background-color: rgb(228, 228, 228);
