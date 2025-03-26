@@ -100,17 +100,6 @@ const Index = () => {
 			setProjects(response.data);
 			setLoading(false);
 
-			//  // Map UUIDs to projects and include a data array
-			//  const matchingProjects = uuidArray.map(uuid => {
-			//   const project = response.data.find(project => project.uuid === uuid)
-			//   return {
-			//     data: {
-			//       ...project,
-			//     },
-			//   };
-			// });
-			// console.log("Recent updated data:", matchingProjects);
-			// setSelectedData(matchingProjects);
 		} catch (error) {
 			console.error('Error fetching projects:', error);
 			if (error.response) {
@@ -118,7 +107,6 @@ const Index = () => {
 				console.error('Status code:', error.response.status);
 				console.error('Headers:', error.response.headers);
 			} else if (error.request) {
-				// The request was made but no response was received
 				console.error('No response received:', error.request);
 			} else {
 				console.error('Error setting up the request:', error.message);
@@ -129,7 +117,6 @@ const Index = () => {
 	useEffect(() => {
 		fetchProjects();
 	}, [year, country, status, searchString, isUnorderedList, refreshProjects]);
-	// }, [year, country, status, searchString, isUnorderedList]);
 
 
 
@@ -145,13 +132,9 @@ const Index = () => {
 		setUuidArray([]);
 
 		try {
-			// Using Promise.all to await all requests concurrently
 			await Promise.all(
 				selectedData.map(async (data) => {
 					const job_uuid = data.data.uuid;
-					// console.log(data.data.uuid)
-					// console.log(data.data.portaluuid)
-					// console.log(data.data)
 
 					let response; 
 
@@ -274,8 +257,6 @@ const Index = () => {
 						} else {
 							console.log('No response: ', response);
 							console.log('No response received for job_uuid:', job_uuid);
-							// uppdateNetCatalogueProjects(responseArray)
-
 							setLoadingD2(false)
 						}
 					} catch (error) {
@@ -291,18 +272,17 @@ const Index = () => {
 
 	//fetch neo_projects and update responseArray
 	const fetchNeoProjectsForOrders = async (responseArray) => {
-		if (responseArray.length === 0) return; // Skip if responseArray is empty
+		if (responseArray.length === 0) return; 
 
 		try {
 			const response = await axios.get(`${baseURL}/api/neo_projects`);
-			// console.log('Fetched neo_projects:', response.data);
 			responseArray.forEach((item) => {
 				const matchingProject = response.data.find(
 					(project) => project.uuid === item.job_uuid
 				);
 				if (matchingProject) {
 					// console.log("MATCHED!!!")
-					item.projectname = matchingProject.name; // Add projectName
+					item.projectname = matchingProject.name; 
 					// Parse catalogues JSON string
 					try {
 						const catalogues = JSON.parse(matchingProject.catalogues);
@@ -328,14 +308,10 @@ const Index = () => {
 
 	//fetch net_cataloue_projects and update responseArray
 	const fetchCatalogProjects = async (responseArray) => {
-		if (responseArray.length === 0) return; // Skip if responseArray is empty
+		if (responseArray.length === 0) return; 
 		
 		try {
-			// Fetch net_catalogue_projects data
 			const response = await axios.get(`${baseURL}/api/net_catalogue_projects`);
-
-			// console.log('Fetched net_catalogue_projects:', response.data);
-
 			// Update responseArray with portaluuid and uuid based on matching orderuuid
 			responseArray.forEach((item) => {
 				const matchingProject = response.data.find(
@@ -394,10 +370,6 @@ const Index = () => {
 						`${baseURL}/api/net_catalogue_orders`,
 						batch
 					);
-
-					// const insertedOrders = responseAddTuppel.data.insertedOrders;
-					// const message = responseAddTuppel.data.message;
-					// const insertedOrdersAmount = responseAddTuppel.data.insertedOrders.length;
 
 					console.log(responseAddTuppel);
 					const insertedOrders = responseAddTuppel.data?.insertedOrders || [];

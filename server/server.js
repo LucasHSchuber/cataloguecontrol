@@ -16,7 +16,6 @@ require('dotenv').config();
 const BASE_DIR = process.env.BASE_DIR || 'C:';
 const RESOURCES_DIR = process.env.RESOURCES_DIR || 'Resources_ebss';
 
-// Example usage
 console.log(`Base Directory: ${BASE_DIR}`);
 console.log(`Resources Directory: ${RESOURCES_DIR}`);
 
@@ -63,7 +62,7 @@ app.post('/api/savefiles', (req, res) => {
     console.log('Parsed files:', files);
 
     const responseFiles = [];
-    const directoryNames = fields.name; // This should be an array of directory names
+    const directoryNames = fields.name; 
 
     if (!directoryNames || directoryNames.length === 0) {
       return res.status(400).json({ error: 'No directory names provided' });
@@ -86,11 +85,9 @@ app.post('/api/savefiles', (req, res) => {
         return;
       }
 
-      const directoryName = directoryNames[index]; // Get directory name corresponding to this file
-      // const targetDir = path.join('C:', 'Resources_ebss', directoryName);
+      const directoryName = directoryNames[index]; 
       const targetDir = path.join(process.env.BASE_DIR, process.env.RESOURCES_DIR, directoryName);
 
-      // Create target directory if it does not exist
       if (!fs.existsSync(targetDir)) {
         fs.mkdirSync(targetDir, { recursive: true });
       }
@@ -100,18 +97,16 @@ app.post('/api/savefiles', (req, res) => {
       
       console.log(`Moving file from ${originalFilePath} to ${targetPath}`);
 
-      // Move the file from temporary to final destination
       fs.rename(originalFilePath, targetPath, err => {
         if (err) {
           console.error(`Error moving file ${originalFilePath} to ${targetPath}:`, err);
           errorOccurred = true;
-          // Continue processing other files even if one fails
           return;
         }
 
         // Clean and format the path for response
         let responseTargetPath = path.relative(path.join(BASE_DIR, RESOURCES_DIR), targetPath);
-        responseTargetPath = responseTargetPath.replace(/\\/g, '/'); // Ensure using forward slashes
+        responseTargetPath = responseTargetPath.replace(/\\/g, '/');
 
 
         responseFiles.push({
@@ -124,8 +119,6 @@ app.post('/api/savefiles', (req, res) => {
       });
     });
 
-    // Respond once all files are processed
-    // Delay response to ensure all files are moved
     setTimeout(() => {
       if (errorOccurred) {
         res.status(500).json({
@@ -139,80 +132,9 @@ app.post('/api/savefiles', (req, res) => {
           files: responseFiles
         });
       }
-    }, 1000); // Adjust the delay if necessary
+    }, 1000); 
   });
 });
-
-
-
-
-
-  // // Define storage configuration for multer
-  // const storage = multer.diskStorage({
-  //   destination: function (req, file, cb) {
-  //       // Retrieve the directory name from the request body
-  //       // const directoryName = req.body.name; 
-  //       const directoryName = "catalog_file";
-  //       if (!directoryName) {
-  //           return cb(new Error('No directory name provided'), null);
-  //       }
-
-  //       // Construct the upload directory based on the directoryName
-  //       const baseDir = path.join('C:', 'Resources_ebss', directoryName);
-
-  //     // Ensure the directory exists; create it if it doesn't
-  //     if (!fs.existsSync(baseDir)) {
-  //       fs.mkdirSync(baseDir, { recursive: true });
-  //     }
-
-  //     cb(null, baseDir); 
-  //   },
-  //   filename: function (req, file, cb) {
-  //       cb(null, file.originalname);
-  //   }
-  // });
-
-  // const upload = multer({ storage: storage });
-
-  // app.post('/api/savefiles', upload.array('files'), (req, res) => {
-  //   try {
-  //     console.log('Request Body:', req.body);
-  //     console.log('Uploaded Files:', req.files);
-  
-  //     // Check if the request body does not contain the expected 'name' field
-  //     if (!req.body.name) {
-  //       return res.status(400).json({
-  //         error: 'No directory name provided',
-  //         status: 400
-  //       });
-  //     }
-  
-  //     const name = Array.isArray(req.body.name) ? req.body.name : [req.body.name];
-  
-  //     // Add the correct `fileNames` to each file object based on the index
-  //     const filesWithNames = req.files.map((file, index) => ({
-  //       ...file,
-  //       name: name[index] || name[0] 
-  //     }));
-  
-  //     // If everything goes well, send a success response
-  //     res.status(200).json({
-  //       message: 'Files uploaded successfully',
-  //       status: 200,
-  //       files: filesWithNames
-  //     });
-  
-  //   } catch (error) {
-  //     console.error('Error occurred during file upload:', error);
-  
-  //     res.status(500).json({
-  //       error: 'An error occurred during file upload',
-  //       status: 500,
-  //       details: error.message
-  //     });
-  //   }
-  // });
-  
 
 
 
@@ -685,7 +607,6 @@ app.post('/api/savefiles', (req, res) => {
       pool.query(query, values, (err, results) => {
         if (err) {
           console.error("Error inserting into pdfgen_ebss:", err);
-          // return res.status(500).send("Error inserting into pdfgen_ebss");
           res.status(500).json({ error: err.sqlMessage || 'Database insertion failed' });
         }
         console.log("Data inserted into pdfgen_ebss", results);

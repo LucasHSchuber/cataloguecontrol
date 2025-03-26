@@ -2,15 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-	faTrash,
-} from '@fortawesome/free-solid-svg-icons';
+import {faTrash} from '@fortawesome/free-solid-svg-icons';
 
 import axios from 'axios';
 
-import {
-	baseURL,
-} from '../../../config/env.js';
+import {baseURL} from '../../../config/env.js';
 
 import { RingLoader } from 'react-spinners';
 import { ToastContainer, toast, Slide } from 'react-toastify';
@@ -37,7 +33,6 @@ const Ebss = () => {
 
     // State variables for each form field
     const [productType, setProductType] = useState('');
-    const [productionType, setProductionType] = useState('');
     const [template, setTemplate] = useState('');
     const [catalogueFile, setCatalogueFile] = useState(null); 
     const [logoActive, setLogoActive] = useState(false);
@@ -149,82 +144,6 @@ const Ebss = () => {
         }
     }, [templates, productionTypes]);
 
-    // // Fetch data from the API
-    // useEffect(() => {
-    // // Fetch templates and production types
-    // const fetchData = async () => {
-    //     try {
-    //         const response = await axios.get(`/api/index.php/rest/pdfgen/productdata`, {
-    //             params: {
-    //                 product_type: product
-    //             }
-    //         });
-    //         setProductionTypes(response.data.production_types);
-    //         setTemplates(response.data.templates);
-    //         console.log('response:', response.data);
-    //     } catch (error) {
-    //     console.error('Error fetching data:', error);
-    //     }
-    // };
-    // //Fetch current data 
-    // const fetcProjecthData = async () => {
-    //     try {
-    //         const responseProjectData = await axios.get(`/api/index.php/rest/pdfgen/projectdata`, {
-    //             params: {
-    //                 // project_uuid: "9fba7984-ff60-4a44-8482-509024feb902",
-    //                 project_uuid: uuid,
-    //                 product_type: product
-    //             }
-    //         });
-    //         console.log('responseProjectData:', responseProjectData.data.result);
-    //         const projectData = responseProjectData.data.result;
-    //         if (projectData){
-    //             console.log("NOT NULL")
-    //             const initialFormVariablesData = {};
-    //             console.log("projectData:", projectData.data)
-    //             projectData.data.forEach((data) => {
-    //                 if (data.variable.type === "file" && data.value) {
-    //                     initialFormVariablesData[data.name] = data.value;
-    //                     console.log(data.name)
-    //                     console.log(data.value)
-    //                     setConfirmationStatus((prevStatus) => ({...prevStatus, [data.name]: data.value,}));
-    //                 }else{
-    //                     initialFormVariablesData[data.name] = data.value;
-    //                     setConfirmationStatus((prevStatus) => ({...prevStatus, [data.name]: data.value,}));
-    //                 }
-    //             })
-    //             console.log('initialFormVariablesData', initialFormVariablesData);
-    //             setFormData({
-    //                 production_active: projectData.production_active,
-    //                 ...initialFormVariablesData
-    //             })
-    //             setSelectedProductionType(projectData.production_type.id)
-    //             setSelectedTemplate(projectData.template.id)
-    //             // projectData.template.variables.forEach((variable))
-    //         } else {
-    //             console.log("No project data fetched from /projectdata with id:", uuid)
-
-    //             // If no project data, use template data for defaults
-    //             console.log('templates', templates);
-    //             if (templates && templates.variables) {
-    //                 const defaultValues = {};
-    //                 templates.variables.forEach(variable => {
-    //                     defaultValues[variable.name] = variable.default_value;
-    //                 });
-    //                 setFormData({
-    //                     ...defaultValues
-    //                 });
-    //             }
-    //         }
-    //     } catch (error) {
-    //     console.error('Error fetching project data:', error);
-    //     }
-    // };
-
-    // fetchData();
-    // fetcProjecthData();
-    // }, []);
-
 
     // Handle changes in production type select
     const handleProductionTypeChange = (e) => {
@@ -269,7 +188,6 @@ const Ebss = () => {
         const file = event.target.files[0];
         console.log("Uploaded File: ", file);
         console.log("All Uploaded File Data: ", event.target.files);
-        // setFile(file);
         setFormData((prevData) => ({
             ...prevData,
             [name]: file,
@@ -278,10 +196,10 @@ const Ebss = () => {
             setFormError((prevState) => ({ ...prevState, [name]: false }));
         }
     };
+
     // handle clear file
     const handleClearFile = (name) => {
         setFormData((prevData) => ({...prevData,[name]: null,}));
-        // setFormError((prevState) => ({ ...prevState, [name]: true }));
     };
 
     useEffect(() => {
@@ -298,7 +216,6 @@ const Ebss = () => {
 
         //check for internet connection
         if (!navigator.onLine) {
-            // Show toast notification if offline
             toast.error('You are offline! Please check your internet connection and try again.')
             return;   
         }
@@ -344,10 +261,9 @@ const Ebss = () => {
         return;
         }
 
-        // --- Form passed Check ---
+
         setloading(true);
 
-        // Create Variables-array 
         // Create array of files to send to SaveFilesToDisk
         const variables = []
         console.log('selectedTemplateObj', selectedTemplateObj);
@@ -385,7 +301,6 @@ const Ebss = () => {
                 console.log("responseSaveFilesToDisk: ", responseSaveFilesToDisk);
     
                 if (responseSaveFilesToDisk.status === 200) {
-                     // Create new variable array to send with in data to restAPI 
                     const variablesArray = [];
                     responseSaveFilesToDisk.files.forEach((file) => {    
                         variablesArray.push({
@@ -394,13 +309,12 @@ const Ebss = () => {
                         });
                     });
 
-                    // Create a set of existing variable names to avoid duplicates
                     const existingVariableNames = new Set(
                         responseSaveFilesToDisk.files.map(file => file.name)
                     );
 
                     console.log("selectedTemplateObj.variables", selectedTemplateObj.variables);
-                     // Add new variables from selectedTemplateObj.variables if their name is not already in the set
+                     
                     selectedTemplateObj.variables.forEach((variable) => {
                         let value = formData[variable.name];
                         if (variable.type === 'bool') {
@@ -530,39 +444,7 @@ const Ebss = () => {
         }
     };
 
-      
-    // const saveFilesToDisk = async (files) => {
-    //     const formData = new FormData();
-    //     console.log('files', files);
-        
-    //     files.forEach(({ file, name }) => {
-    //         if (file instanceof File) {
-    //             formData.append('files', file, file.name); 
-    //             formData.append('name', name); 
-    //             console.log("File: ", file, "Name: ", name);
-    //         } else {
-    //             console.error('Not a valid File object:', file);
-    //         }
-    //     });
-    //     console.log('formData entries:');
-    //     for (const [key, value] of formData.entries()) {
-    //         console.log(`${key}: ${value}`);
-    //     }
-        
-    //     try {
-    //         const response = await axios.post(`${baseURL}/api/savefiles`, formData, {
-    //             headers: {
-    //                 'Content-Type': 'multipart/form-data',
-    //             },
-    //         });
-    //         console.log('Files saved:', response.data);
-    //         return response.data;
-    //     } catch (error) {
-    //         console.error('Error saving files:', error);
-    //         return error;
-    //     }
-    // };
-    
+
     
 
 
@@ -739,12 +621,12 @@ const Ebss = () => {
                             </div>
                             <div className='choice-box'>
                                 <input
-                                className={`ml-2 hidden-file-input ${formError[variable.name] ? 'alert-select' : ''}`}
-                                type="file"
-                                id={variable.name}
-                                onChange={(e) => handleFileChange(e, variable.name === 'catalog_file' ? setCatalogueFile : setLogoFile, variable.name)}
-                                // accept={variable.name === 'catalog_file' ? '.pdf' : '.png,.jpeg'}
-                                accept={variable.extra}
+                                    className={`ml-2 hidden-file-input ${formError[variable.name] ? 'alert-select' : ''}`}
+                                    type="file"
+                                    id={variable.name}
+                                    onChange={(e) => handleFileChange(e, variable.name === 'catalog_file' ? setCatalogueFile : setLogoFile, variable.name)}
+                                    // accept={variable.name === 'catalog_file' ? '.pdf' : '.png,.jpeg'}
+                                    accept={variable.extra}
                                 />
                                 <label htmlFor={variable.name} 
                                 className={`ml-2 custom-file-button ${formError[variable.name] ? 'alert-select' : ''}`}
